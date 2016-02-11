@@ -1,4 +1,3 @@
-'''
 #final query
 select
 	diagnosis_date,
@@ -692,4 +691,3 @@ left join
 SQLCRIS_User.dbo.Afernandes_Antidepressant_MAR14_AUG14
 
 on Table1.a = SQLCRIS_User.dbo.Afernandes_Antidepressant_MAR14_AUG14.PatientonAD
-'''
