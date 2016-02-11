@@ -1,82 +1,82 @@
 #final query
-'''
-select
-	diagnosis_date,
-	primary_diagnosis,
-	diagnosis_id,
-	a, --brcid for patients with depression diagnosis
-	PatientonAD,
-	LithiumFlag,
-	TCA_AmitriptylineFlag,
-	TCA_CLOMIPRAMINEFlag,
-	TCA_DOSULEPINFlag,
-	TCA_DOXEPINFlag,
-	TCA_IMIPRAMINEFlag,
-	TCA_LOFEPRAMINEFlag,
-	TCA_NORTRIPTYLINEFlag, 
-	TCA_TRIMIPRAMINEFlag, 
-	TCARELATED_MIANSERINFlag,
-	TCARELATED_TRAZODONEFlag
-	MAOI_ISOCARBOXAZIDFlag, 
-	MAOI_PHENELZINEFlag, 
-	MAOI_TRANYLCYPROMAINEFlag, 
-	REVERSEMAOI_MOCLOBEMIDEFlag, 
-	SSRI_CITALOPRAMFlag, 
-	SSRI_ESCITALOPRAMFlag,
-	SSRI_FLUOXETINEFlag,
-	SSRI_FLUVOXAMINEFlag,
-	SSRI_PAROXETINEFlag,
-	SSRI_SERTRALINEFlag,
-	SNRI_DOLUXETINEFlag,
-	SNRI_REBOXETINEFlag,
-	OTHERAD_AGOMELATINFlag,
-	OTHERAD_BUPROPIONFlag,
-	OTHERAD_MIRTAZAPINEFlag,
-	OTHERAD_TRYPTOPHANFlag,
-	OTHERAD_VENLAFAXINEFlag, -- this is an SNRI
-	ethnicitycleaned,
-	cleaneddateofbirth,
-	Gender_ID,
-	Marital_Status_ID,
-	LatestNumberOfSpells, -- how many spells have they had so far (includes the spell they're at during snapshot)
-	Accepted_Date, --referral accepted date
-	--Honos Items
-	Agitated_Behaviour_Score_ID,
-	Self_Injury_Score_ID,
-	Problem_Drinking_Drugs_Score_ID,
-	Cognitive_Problems_Score_ID,
-	Physical_Illness_Score_ID,
-	Hallucinations_Score_ID,
-	Depressed_Mood_Score_ID,
-	Other_Mental_Problems_Score_ID,
-	Other_Mental_Problems_Type_ID,
-	Relationship_Problems_Score_ID,
-	Daily_Living_Problems_Score_ID,
-	Living_Conditions_Problems_Score_ID,
-	Occupational_Problems_Score_ID,
-	Adjusted_Total,
-	PBR_Repeat_Self_Harm_ID,
-	Rating_Date,
-	noncompliant, --using the compliance application 
-	compliant,
-	-- were they receiving CBT during snapshot
-	PTSessionDate,
-	SessionNumber,
-	--were they on antipsychotic during snapshot
-	AntiPsychoticDate,
-	AntiPsychoticFlag,
-	--were they on lithium during snapshot
-	CurrentLithium,
-	CurrentLithiumdate,
-	PastADdate,
-	PastAD
+
+	select
+		diagnosis_date,
+		primary_diagnosis,
+		diagnosis_id,
+		a, --brcid for patients with depression diagnosis
+		PatientonAD,
+		LithiumFlag,
+		TCA_AmitriptylineFlag,
+		TCA_CLOMIPRAMINEFlag,
+		TCA_DOSULEPINFlag,
+		TCA_DOXEPINFlag,
+		TCA_IMIPRAMINEFlag,
+		TCA_LOFEPRAMINEFlag,
+		TCA_NORTRIPTYLINEFlag, 
+		TCA_TRIMIPRAMINEFlag, 
+		TCARELATED_MIANSERINFlag,
+		TCARELATED_TRAZODONEFlag
+		MAOI_ISOCARBOXAZIDFlag, 
+		MAOI_PHENELZINEFlag, 
+		MAOI_TRANYLCYPROMAINEFlag, 
+		REVERSEMAOI_MOCLOBEMIDEFlag, 
+		SSRI_CITALOPRAMFlag, 
+		SSRI_ESCITALOPRAMFlag,
+		SSRI_FLUOXETINEFlag,
+		SSRI_FLUVOXAMINEFlag,
+		SSRI_PAROXETINEFlag,
+		SSRI_SERTRALINEFlag,
+		SNRI_DOLUXETINEFlag,
+		SNRI_REBOXETINEFlag,
+		OTHERAD_AGOMELATINFlag,
+		OTHERAD_BUPROPIONFlag,
+		OTHERAD_MIRTAZAPINEFlag,
+		OTHERAD_TRYPTOPHANFlag,
+		OTHERAD_VENLAFAXINEFlag, -- this is an SNRI
+		ethnicitycleaned,
+		cleaneddateofbirth,
+		Gender_ID,
+		Marital_Status_ID,
+		LatestNumberOfSpells, -- how many spells have they had so far (includes the spell they're at during snapshot)
+		Accepted_Date, --referral accepted date
+		--Honos Items
+		Agitated_Behaviour_Score_ID,
+		Self_Injury_Score_ID,
+		Problem_Drinking_Drugs_Score_ID,
+		Cognitive_Problems_Score_ID,
+		Physical_Illness_Score_ID,
+		Hallucinations_Score_ID,
+		Depressed_Mood_Score_ID,
+		Other_Mental_Problems_Score_ID,
+		Other_Mental_Problems_Type_ID,
+		Relationship_Problems_Score_ID,
+		Daily_Living_Problems_Score_ID,
+		Living_Conditions_Problems_Score_ID,
+		Occupational_Problems_Score_ID,
+		Adjusted_Total,
+		PBR_Repeat_Self_Harm_ID,
+		Rating_Date,
+		noncompliant, --using the compliance application 
+		compliant,
+		-- were they receiving CBT during snapshot
+		PTSessionDate,
+		SessionNumber,
+		--were they on antipsychotic during snapshot
+		AntiPsychoticDate,
+		AntiPsychoticFlag,
+		--were they on lithium during snapshot
+		CurrentLithium,
+		CurrentLithiumdate,
+		PastADdate,
+		PastAD
 	
-	--COUNT(a), primary_diagnosis
+		--COUNT(a), primary_diagnosis
 
 	
-from 
+	from 
 
-																	      ----------------------------------------------------------------------------------------------
+	----------------------------------------------------------------------------------------------
 --The two queries below were written to create a cohort of inidviduals wiht a diagnosis of depression and 
 --who had clinical activity (in the form of face to face contact) during a randomly selected period of 
 --1st of March, 2014 and 31st August 2014
@@ -84,78 +84,78 @@ from
 
 
 --1st Query defining active referrals (i.e. f2f activity)
---select *
---INTO dbo.Afernandes_Active_Referrals_MAR14_AUG14
--- from
---(SELECT Distinct (BRCID)
---FROM SQLCRIS.DBO.Event
---WHERE (EVENT.Start_Date BETWEEN '01-MAR-2014' and '31-AUG-2014') AND (eVENT.Event_Type_Of_Contact_ID LIKE '%face%')
---)TableMonkey
+		select *
+		INTO dbo.Afernandes_Active_Referrals_MAR14_AUG14
+	--from
+	--(SELECT Distinct (BRCID)
+	--FROM SQLCRIS.DBO.Event
+	--WHERE (EVENT.Start_Date BETWEEN '01-MAR-2014' and '31-AUG-2014') AND (eVENT.Event_Type_Of_Contact_ID LIKE '%face%')
+	--)TableMonkey
 
 
 --2nd Query defining individuals with a depression diagnosis and not any other diagnoses before start of observation period
---select 
---ROW_NUMBER() OVER (PARTITION BY SQLCrisImport.dbo.Diagnosis_combined.BRCID ORDER BY DIAGNOSIS_DATE desc, diagnosis_id DESC,
---SQLCrisImport.dbo.Diagnosis_combined.diagnosis_id) AS LatestDate, --for latest depression diagnosis; closest to 1ST MARCH 2014
---diagnosis_date,primary_diagnosis,diagnosis_id,brcid as a 
---FROM 
---SQLCrisImport.dbo.Diagnosis_combined 
---WHERE
+	--select 
+	--ROW_NUMBER() OVER (PARTITION BY SQLCrisImport.dbo.Diagnosis_combined.BRCID ORDER BY DIAGNOSIS_DATE desc, diagnosis_id DESC,
+	--SQLCrisImport.dbo.Diagnosis_combined.diagnosis_id) AS LatestDate, --for latest depression diagnosis; closest to 1ST MARCH 2014
+	--diagnosis_date,primary_diagnosis,diagnosis_id,brcid as a 
+	--FROM 
+	--SQLCrisImport.dbo.Diagnosis_combined 
+	--WHERE
 -- these diagnoses were chosen as they were mentioned in the updated NICE guidelines
---with distinct_six_month_depressiondiagnosis_AF as 
---(	(
---	--F32: Depressive episode (include with and without psychotic symptoms)
---	primary_diagnosis like '%F32%'
---	and 
---	diagnosis_date <='01-MAR-2014'
---	
---	)
---	OR
---	(
---	primary_diagnosis like '%depressi%'
---	and 
---	diagnosis_date <='01-MAR-2014'
---	)
---	OR
---	(
---	--recurrent depressive disorder
---	primary_diagnosis like '%F33%'
---	and 
---	diagnosis_date <='01-MAR-2014'
---	)
---	OR
---	(
---	--Dysthymia; from F34 (Persistent mood disorders family; excluded F34.0 Cyclothymia and F34.8 Other persistent mood, F34.9 Persistent 	      --mood disorder)
---	primary_diagnosis like '%F34.1%'
---	and 
---	diagnosis_date <='01-MAR-2014'
---	) 
---	OR
---	(
---	primary_diagnosis like '%dysthymi%'
---	and 
---	diagnosis_date <='01-MAR-2014'
---	) 
---	OR
---	(
---	-- mixed anxiety and depression; from F41 Other anxiety disorder family; exclued Panic disorder F41.0, GAD F41.1, F41.3 Other mixed an	      --xiety disorders
---	primary_diagnosis like '%F41.2%'
---	and 
---	diagnosis_date <='01-MAR-2014'
---	)
---	OR
---	--http://www.gpcare.org/guidelines/mixedanxdepd.htm
---	(
---	primary_diagnosis like '%mixed anxiety and depressi%'
---	and 
---	diagnosis_date <='01-MAR-2014'
---	)
---)
---  select *
---  from distinct_six_month_depressiondiagnosis_AF
---  WHERE 
---	(
---	Latestdate = '1'
+	--with distinct_six_month_depressiondiagnosis_AF as 
+	--(	(
+	--	--F32: Depressive episode (include with and without psychotic symptoms)
+	--	primary_diagnosis like '%F32%'
+	--	and 
+	--	diagnosis_date <='01-MAR-2014'
+	--	
+	--	)
+	--	OR
+	--	(
+	--	primary_diagnosis like '%depressi%'
+	--	and 
+	--	diagnosis_date <='01-MAR-2014'
+	--	)
+	--	OR
+	--	(
+	--	--recurrent depressive disorder
+	--	primary_diagnosis like '%F33%'
+	--	and 
+	--	diagnosis_date <='01-MAR-2014'
+	--	)
+	--	OR
+	--	(
+	--	--Dysthymia; from F34 (Persistent mood disorders family; excluded F34.0 Cyclothymia and F34.8 Other persistent mood, F34.9 Persistent 	      --mood disorder)
+	--	primary_diagnosis like '%F34.1%'
+	--	and 
+	--	diagnosis_date <='01-MAR-2014'
+	--	) 
+	--	OR
+	--	(
+	--	primary_diagnosis like '%dysthymi%'
+	--	and 
+	--	diagnosis_date <='01-MAR-2014'
+	--	) 
+	--	OR
+	--	(
+	--	-- mixed anxiety and depression; from F41 Other anxiety disorder family; exclued Panic disorder F41.0, GAD F41.1, F41.3 Other mixed an	      --xiety disorders
+	--	primary_diagnosis like '%F41.2%'
+	--	and 
+	--	diagnosis_date <='01-MAR-2014'
+	--	)
+	--	OR
+	--	--http://www.gpcare.org/guidelines/mixedanxdepd.htm
+	--	(
+	--	primary_diagnosis like '%mixed anxiety and depressi%'
+	--	and 
+	--	diagnosis_date <='01-MAR-2014'
+	--	)
+	--)
+	--  select *
+	--  from distinct_six_month_depressiondiagnosis_AF
+	--  WHERE 
+	--		(
+		--	Latestdate = '1'
 --	)
 --	and 
 --	(
