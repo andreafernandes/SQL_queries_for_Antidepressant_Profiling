@@ -1,5 +1,5 @@
 #final query
-'''bash
+'''
 select
 	diagnosis_date,
 	primary_diagnosis,
