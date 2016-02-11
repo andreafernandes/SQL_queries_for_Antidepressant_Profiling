@@ -1,4 +1,5 @@
 #final query
+'''bash
 select
 	diagnosis_date,
 	primary_diagnosis,
@@ -204,7 +205,7 @@ from
 --start of query to put query together
 
 
-(																		select * from dbo.Afernandes_Active_Referrals_MAR14_AUG14
+(select * from dbo.Afernandes_Active_Referrals_MAR14_AUG14
   inner join 
   dbo.AFernandes_DepDiag_bef_MAR2014
   on dbo.AFernandes_DepDiag_bef_MAR2014.a = dbo.Afernandes_Active_Referrals_MAR14_AUG14.brcid
@@ -663,7 +664,7 @@ where PastADIndication.ranking = '1') as PastAD
 on Table1.a = PastAD.BrcId
 -------------------------------------------------------------------------------------------------
 
-
+'''
 
 
 # SQL_queries_for_Antidepressant_Profiling
