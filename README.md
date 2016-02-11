@@ -298,9 +298,9 @@ on Table1.a = Honos.brcid
 
 -------------------------------------------------------------------------------------------------------------------
 --this will join a table that counts the number of time "non-compliance" was mentioned during snapshot period
-left join
+	left join
 
-(
+	(		
 	select  brcid
 		, count (match) as noncompliant 
 		
@@ -321,9 +321,9 @@ left join
 		
 	where match like '%non%' --to get non-compliance annotations
 	group by BrcId
-) 
-as ComplianceIndicator
-on Table1.a = ComplianceIndicator.brcid
+	)	 
+	as ComplianceIndicator
+	on Table1.a = ComplianceIndicator.brcid
 
 ----------------------------------------------------------------------------------------------------------
 --this will join a table that counts the number of times "compliance" was mentioned during snapshot period
