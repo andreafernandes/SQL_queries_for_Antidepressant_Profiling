@@ -84,13 +84,14 @@
 
 
 --1st Query defining active referrals (i.e. f2f activity)
+	
 		select *
 		INTO dbo.Afernandes_Active_Referrals_MAR14_AUG14
-	--from
-	--(SELECT Distinct (BRCID)
-	--FROM SQLCRIS.DBO.Event
-	--WHERE (EVENT.Start_Date BETWEEN '01-MAR-2014' and '31-AUG-2014') AND (eVENT.Event_Type_Of_Contact_ID LIKE '%face%')
-	--)TableMonkey
+		from
+			(SELECT Distinct (BRCID)
+			FROM SQLCRIS.DBO.Event
+			WHERE (EVENT.Start_Date BETWEEN '01-MAR-2014' and '31-AUG-2014') AND (eVENT.Event_Type_Of_Contact_ID LIKE '%face%')
+			)TableMonkey
 
 
 --2nd Query defining individuals with a depression diagnosis and not any other diagnoses before start of observation period
