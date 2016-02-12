@@ -2,7 +2,7 @@
 
 	select
 		diagnosis_date,
-		primary_diagnosis,
+		primary_diagnosis, -- this is closest diagnosis to 1st March 2014
 		diagnosis_id,
 		a, --brcid for patients with depression diagnosis
 		PatientonAD,
@@ -205,96 +205,93 @@
 --start of query to put query together
 
 
-(select * from dbo.Afernandes_Active_Referrals_MAR14_AUG14
-  inner join 
-  dbo.AFernandes_DepDiag_bef_MAR2014
-  on dbo.AFernandes_DepDiag_bef_MAR2014.a = dbo.Afernandes_Active_Referrals_MAR14_AUG14.brcid
-)Table1 
+		(select * from dbo.Afernandes_Active_Referrals_MAR14_AUG14
+		  inner join 
+		  dbo.AFernandes_DepDiag_bef_MAR2014
+		  on dbo.AFernandes_DepDiag_bef_MAR2014.a = dbo.Afernandes_Active_Referrals_MAR14_AUG14.brcid
+		)Table1 
 --this is final snapshot cohort with depression and active during snapshot
 --i can now join my various variables to this cohort. 
 
 -----------------------------------------------------------------------------------------------
 
 ----this joins ADs and Demographics to our table. 
-left join 
-SQLCRIS_User.dbo.Afernandes_Antidepressant_MAR14_AUG14
+		left join 
+		SQLCRIS_User.dbo.Afernandes_Antidepressant_MAR14_AUG14
 --the queries for "Afernandes_Antidepressant_MAR14_AUG14" are stored in SQLCRIS_User:
 ----dbo.AFernandes_Antidepressants_MultiRowPerPatient_Snapshot_Nov2015
 ----dbo.AFernandes_Antidepressant_Distinct_Snapshot_Nov2015
 ----dbo.AFernandes_Antidepressant_Distinct_OneColumnPerAD_Nov2015
-on Table1.a = SQLCRIS_User.dbo.Afernandes_Antidepressant_MAR14_AUG14.PatientonAD
+		on Table1.a = SQLCRIS_User.dbo.Afernandes_Antidepressant_MAR14_AUG14_with_dates.PatientonAD
 
 -----------------------------------------------------------------------------------
 
-left join
-SQLCRIS.DBO.EPR_Form
-ON Table1.a = EPR_Form.BrcId 
+		left join
+		SQLCRIS.DBO.EPR_Form
+		ON Table1.a = EPR_Form.BrcId 
 
 ---------------------------------------------------------------------------------
 
 --joining number of spell data
-left join
-(
-	select * 
-	from 
-	     (
-	select Spell_Number as LatestNumberOfSpells
-	, Accepted_Date
-	, BrcId
-	, RANK() over (partition by brcid order by Spell_number desc) as RankSpell
-	from SQLCRIS.DBO.Referral
-	     )RankRef
-	
-	where RankSpell = '1'
-) RankedReferrallSpell
+		left join
+		(
+			select * 
+			from 
+			     (
+			select Spell_Number as LatestNumberOfSpells
+			, Accepted_Date
+			, BrcId
+			, RANK() over (partition by brcid order by Spell_number desc) as RankSpell
+			from SQLCRIS.DBO.Referral
+			     )RankRef
+			
+			where RankSpell = '1'
+		) RankedReferrallSpell
 
-on Table1.a = RankedReferrallSpell.BrcId
+		on Table1.a = RankedReferrallSpell.BrcId
 
 -------------------------------------------------------------------------------
 --joining honos items
 
-left join
+		left join
 
-(
-	select 
-		Agitated_Behaviour_Score_ID,
-		Self_Injury_Score_ID,
-		Problem_Drinking_Drugs_Score_ID,
-		Cognitive_Problems_Score_ID,
-		Physical_Illness_Score_ID,
-		Hallucinations_Score_ID,
-		Depressed_Mood_Score_ID,
-		Other_Mental_Problems_Score_ID,
-		Other_Mental_Problems_Type_ID,
-		Relationship_Problems_Score_ID,
-		Daily_Living_Problems_Score_ID,		
-		Living_Conditions_Problems_Score_ID,		
-		Occupational_Problems_Score_ID,		
-		Adjusted_Total,		
-		PBR_Repeat_Self_Harm_ID,		
-		Rating_Date,		
-		BrcId,		
-		CN_Doc_ID
-	
-	
-	from 
 		(
-		select *
-		from 
-			(
 			select 
-			(ABS(DATEDIFF(DD,'01-Mar-2014',Rating_Date)))DaysSinceRecentHonos
-			,RANK () OVER (PARTITION BY BRCID ORDER BY (ABS(DATEDIFF(DD,'01-Mar-2014',Rating_Date)) ) ASC, cn_doc_id ) as RankedHonos
-			,*
-			from SQLCRIS.DBO.HoNOS
-			)HonosClosesttoStartofSnapshot
-
-		where RankedHONOS ='1'
-		) TableHonos
-)Honos
+				Agitated_Behaviour_Score_ID,
+				Self_Injury_Score_ID,
+				Problem_Drinking_Drugs_Score_ID,
+				Cognitive_Problems_Score_ID,
+				Physical_Illness_Score_ID,
+				Hallucinations_Score_ID,
+				Depressed_Mood_Score_ID,
+				Other_Mental_Problems_Score_ID,
+				Other_Mental_Problems_Type_ID,
+				Relationship_Problems_Score_ID,
+				Daily_Living_Problems_Score_ID,		
+				Living_Conditions_Problems_Score_ID,		
+				Occupational_Problems_Score_ID,		
+				Adjusted_Total,		
+				PBR_Repeat_Self_Harm_ID,		
+				Rating_Date,		
+				BrcId,		
+				CN_Doc_ID
+			from 
+				(
+				select *
+				from 
+					(
+					select 
+					(ABS(DATEDIFF(DD,'01-Mar-2014',Rating_Date)))DaysSinceRecentHonos
+					,RANK () OVER (PARTITION BY BRCID ORDER BY (ABS(DATEDIFF(DD,'01-Mar-2014',Rating_Date)) ) ASC, cn_doc_id ) as RankedHonos
+					,*
+					from SQLCRIS.DBO.HoNOS
+					)HonosClosesttoStartofSnapshot
+				where RankedHONOS ='1'
+				) TableHonos
+		)Honos
 	
 
-on Table1.a = Honos.brcid
+		on Table1.a = Honos.brcid
 
 -------------------------------------------------------------------------------------------------------------------
 --this will join a table that counts the number of time "non-compliance" was mentioned during snapshot period
