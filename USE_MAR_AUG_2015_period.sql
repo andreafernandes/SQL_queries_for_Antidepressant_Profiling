@@ -265,7 +265,7 @@ select
 from 
 		SQLCRIS.dbo.Inpatient_episode
 where
-		Admission_Date between '01-MAR-2014' and '30-APR-2015'
+		Admission_Date between '01-MAR-2014' and '28-FEB-2015'
 ) TableInpatient
 
 on Table1.a = TableInpatient.InpatientBrcid
@@ -315,7 +315,12 @@ SQLCRIS.DBO.EPR_Form
 
 ON Table1.a = EPR_Form.BrcId 
 -------------------------------------------------------------------------------------------------
---current hallucination data
+-- current hallucination data, JJ advised on using mlObservation1 = 'positive' to get positive 
+-- mentions of hallucinations. 
+-- This does not apply to all the symptoms. 
+-- In the case of hallucinations, DO NOT add the criteria: mlObservation1 = 'positive' because it 
+-- does not bring back any patients. 
+-- I did a few checks of the NULL and positive examples and both signify positive...
 
 left join
 (
@@ -353,7 +358,7 @@ left join
 [GateDB_Cris].[dbo].[gate]
  on [GateDB_Cris].[dbo].[gate_hunter_hallucination_306].CN_Doc_ID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
  )Table1 
- where calendardate between '01-MAR-2014' and '01-MAR-2015' --and mlObservation1 = 'positive'
+ where calendardate between '01-MAR-2014' and '28-FEB-2015' --and mlObservation1 = 'positive'
  )HallucinationsPast
  on 
  Table1.a = HallucinationsPast.c
@@ -435,7 +440,7 @@ from
 									on 
 											  Table1.documentID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
 			)Table2					 
-			where calendardate between '01-MAR-2014' and '01-MAR-2015'
+			where calendardate between '01-MAR-2014' and '28-FEB-2015'
 )Table3
 group by c1
 )HallucinationsPastCount
@@ -443,7 +448,9 @@ group by c1
  Table1.a = HallucinationsPastCount.c1
 		
 -------------------------------------------------------------------------------------------------
---current Poor Motivation data
+-- current Poor Motivation data
+-- there are only positive and negative mentions of poor motivation instances. 
+-- in this case ok to add the criteria mlObservation1 = 'positive'
 
 left join
 (
@@ -481,7 +488,7 @@ left join
 [GateDB_Cris].[dbo].[gate]
  on [GateDB_Cris].[dbo].[gate_hunter_poor_mot_306].CN_Doc_ID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
  )Table1 
- where calendardate between '01-MAR-2014' and '01-MAR-2015' and mlObservation1 = 'positive'
+ where calendardate between '01-MAR-2014' and '28-FEB-2015' and mlObservation1 = 'positive'
  )PoorMotivationPast
  on 
  Table1.a = PoorMotivationPast.e
@@ -560,14 +567,17 @@ from
 									on 
 											  Table1.documentID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
 			)Table2					 
-			where calendardate between '01-MAR-2014' and '01-MAR-2015'
+			where calendardate between '01-MAR-2014' and '28-FEB-2015'
 )Table3
 group by c1
 )PoorMotivationPastCount
  on 
  Table1.a = PoorMotivationPastCount.c1
 -------------------------------------------------------------------------------------------------
---current Poor Affect data
+-- current Poor Affect data
+-- for flat affect, the criteria  of positive and NULL is used to extract positive mentions
+-- of flat affect
+
 left join
 (
 select  distinct(f)
@@ -583,7 +593,9 @@ left join
 [GateDB_Cris].[dbo].[gate]
  on [GateDB_Cris].[dbo].[gate_hunter_bflat_affect_306].CN_Doc_ID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
  )Table1 
- where calendardate between '01-MAR-2015' and '31-AUG-2015'  and mlObservation1 = 'positive'
+  where calendardate  between '01-MAR-2014' and '01-MAR-2015'   
+					 and (mlObservation1 = 'positive' 
+					 OR mlObservation1 IS NULL)
  )FlatAffectRecent
  on 
  Table1.a = FlatAffectRecent.f
@@ -604,7 +616,9 @@ left join
 [GateDB_Cris].[dbo].[gate]
  on [GateDB_Cris].[dbo].[gate_hunter_bflat_affect_306].CN_Doc_ID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
  )Table1 
- where calendardate between '01-MAR-2014' and '01-MAR-2015'  and mlObservation1 = 'positive'
+  where calendardate  between '01-MAR-2014' and '28-FEB-2015'   
+					 and (mlObservation1 = 'positive' 
+					 OR mlObservation1 IS NULL)
  )FlatAffectPast
  on 
  Table1.a = FlatAffectPast.g
@@ -635,7 +649,8 @@ from
 															src_table,
 															src_col 
 															from [GateDB_Cris].[dbo].[gate_hunter_bflat_affect_306]
-															where mlObservation1 = 'positive'
+															where (mlObservation1 = 'positive' 
+																OR mlObservation1 IS NULL)
 															)Table1											
 									inner join
 											  [GateDB_Cris].[dbo].[gate] 
@@ -675,14 +690,15 @@ from
 															src_table,
 															src_col 
 															from [GateDB_Cris].[dbo].[gate_hunter_bflat_affect_306]
-															where mlObservation1 = 'positive'
+															where (mlObservation1 = 'positive' 
+																OR mlObservation1 IS NULL)
 															)Table1											
 									inner join
 											  [GateDB_Cris].[dbo].[gate] 
 									on 
 											  Table1.documentID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
 			)Table2					 
-			where calendardate between '01-MAR-2014' and '01-MAR-2015'
+			where calendardate between '01-MAR-2014' and '28-FEB-2015'
 )Table3
 group by c1
 )FlatAffectPastCount
@@ -726,7 +742,7 @@ left join
 [GateDB_Cris].[dbo].[gate]
  on [GateDB_Cris].[dbo].[gate_hunter_anhedonia306].CN_Doc_ID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
  )Table1 
- where calendardate between '01-MAR-2014' and '01-MAR-2015'  and mlObservation1 = 'positive'
+ where calendardate between '01-MAR-2014' and '28-FEB-2015'  and mlObservation1 = 'positive'
  )AnhedoniaPast
  on 
  Table1.a = AnhedoniaPast.i
@@ -806,7 +822,7 @@ from
 									on 
 											  Table1.documentID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
 			)Table2					 
-			where calendardate between '01-MAR-2014' and '01-MAR-2015'
+			where calendardate between '01-MAR-2014' and '28-FEB-2015'
 )Table3
 group by c1
 )AnhedoniaPastCount
@@ -850,7 +866,7 @@ left join
 [GateDB_Cris].[dbo].[gate]
  on [GateDB_Cris].[dbo].[gate_hunter_hopeless306].CN_Doc_ID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
  )Table1 
- where calendardate between '01-MAR-2014' and '01-MAR-2015'  and mlObservation1 = 'positive'
+ where calendardate between '01-MAR-2014' and '28-FEB-2015'  and mlObservation1 = 'positive'
  )HopelessPast
  on 
  Table1.a = HopelessPast.k
@@ -928,7 +944,7 @@ from
 									on 
 											  Table1.documentID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
 			)Table2					 
-			where calendardate between '01-MAR-2014' and '01-MAR-2015'
+			where calendardate between '01-MAR-2014' and '28-FEB-2015'
 )Table3
 group by c1
 )HopelessPastCount
@@ -936,6 +952,9 @@ group by c1
  Table1.a = HopelessPastCount.c1
 -------------------------------------------------------------------------------------------------
 --current worthless data
+-- there are form, unknown, positive and negative flags for worthlessness. 
+-- Stick to positive.
+
 left join
 (
 select  distinct(l)
@@ -972,7 +991,7 @@ left join
 [GateDB_Cris].[dbo].[gate]
  on [GateDB_Cris].[dbo].[gate_hunter_worthless306].CN_Doc_ID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
  )Table1 
- where calendardate between '01-MAR-2014' and '01-MAR-2015'  and mlObservation1 = 'positive'
+ where calendardate between '01-MAR-2014' and '28-FEB-2015'  and mlObservation1 = 'positive'
  )WorthlessPast
  on 
  Table1.a = WorthlessPast.m
@@ -1050,7 +1069,7 @@ from
 									on 
 											  Table1.documentID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
 			)Table2					 
-			where calendardate between '01-MAR-2014' and '01-MAR-2015'
+			where calendardate between '01-MAR-2014' and '28-FEB-2015'
 )Table3
 group by c1
 )WorthlessPastCount
@@ -1058,6 +1077,9 @@ group by c1
  Table1.a = WorthlessPastCount.c1
 -------------------------------------------------------------------------------------------------
 --current SuicideAttempt data
+-- THERE ARE negative, positive and unknown flags
+-- extraction code is fine as it is. 
+
 left join
 (
 select  distinct(n)
@@ -1094,7 +1116,7 @@ left join
 [GateDB_Cris].[dbo].[gate]
  on [GateDB_Cris].[dbo].[gate_hunter_suicide_306].CN_Doc_ID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
  )Table1 
- where calendardate between '01-MAR-2014' and '01-MAR-2015' and mlObservation1 = 'positive'
+ where calendardate between '01-MAR-2014' and '28-FEB-2015' and mlObservation1 = 'positive'
  )SuicideAPast
  on 
  Table1.a = SuicideAPast.o
@@ -1172,7 +1194,7 @@ from
 									on 
 											  Table1.documentID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
 			)Table2					 
-			where calendardate between '01-MAR-2014' and '01-MAR-2015'
+			where calendardate between '01-MAR-2014' and '28-FEB-2015'
 )Table3
 group by c1
 )SuicideAPastCount
@@ -1180,6 +1202,11 @@ group by c1
  Table1.a = SuicideAPastCount.c1
 -------------------------------------------------------------------------------------------------
 --current anergia data
+-- on positve and negative flags for anergia. 
+-- extraction code fine as it is. 
+
+
+
 left join
 (
 select  distinct(p)
@@ -1216,7 +1243,7 @@ left join
 [GateDB_Cris].[dbo].[gate]
  on [GateDB_Cris].[dbo].[gate_hunter_anergia306].CN_Doc_ID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
  )Table1 
- where calendardate between '01-MAR-2014' and '01-MAR-2015'  and mlObservation1 = 'positive'
+ where calendardate between '01-MAR-2014' and '28-FEB-2015'  and mlObservation1 = 'positive'
  )AnergiaPast
  on 
  Table1.a = AnergiaPast.q
@@ -1294,7 +1321,7 @@ from
 									on 
 											  Table1.documentID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
 			)Table2					 
-			where calendardate between '01-MAR-2014' and '01-MAR-2015'
+			where calendardate between '01-MAR-2014' and '28-FEB-2015'
 )Table3
 group by c1
 )AnergiaPastCount
@@ -1356,7 +1383,7 @@ left join
 [GateDB_Cris].[dbo].[gate]
  on [GateDB_Cris].[dbo].[gate_hunter_apathy306].CN_Doc_ID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
  )Table1 
- where calendardate between '01-MAR-2014' and '01-MAR-2015' and mlObservation1 = 'positive'
+ where calendardate between '01-MAR-2014' and '28-FEB-2015' and mlObservation1 = 'positive'
  )ApathyPast
  on 
  Table1.a = ApathyPast.s
@@ -1434,7 +1461,7 @@ from
 									on 
 											  Table1.documentID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
 			)Table2					 
-			where calendardate between '01-MAR-2014' and '01-MAR-2015'
+			where calendardate between '01-MAR-2014' and '28-FEB-2015'
 )Table3
 group by c1
 )ApathyPastCount
@@ -1481,7 +1508,7 @@ left join
 [GateDB_Cris].[dbo].[gate]
  on [GateDB_Cris].[dbo].[gate_hunter_insomnia306].CN_Doc_ID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
  )Table1 
- where calendardate between '01-MAR-2014' and '01-MAR-2015'  and mlObservation1 = 'positive'
+ where calendardate between '01-MAR-2014' and '28-FEB-2015'  and mlObservation1 = 'positive'
  )InsomniaPast
  on 
  Table1.a = InsomniaPast.u
@@ -1559,7 +1586,7 @@ from
 									on 
 											  Table1.documentID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
 			)Table2					 
-			where calendardate between '01-MAR-2014' and '01-MAR-2015'
+			where calendardate between '01-MAR-2014' and '28-FEB-2015'
 )Table3
 group by c1
 )InsomniaPastCount
@@ -1606,7 +1633,7 @@ left join
 [GateDB_Cris].[dbo].[gate]
  on [GateDB_Cris].[dbo].[gate_hunter_aggression_306].CN_Doc_ID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
  )Table1 
- where calendardate between '01-MAR-2014' and '01-MAR-2015' and mlObservation1 = 'positive'
+ where calendardate between '01-MAR-2014' and '28-FEB-2015' and mlObservation1 = 'positive'
  )AgressionPast
  on 
  Table1.a = AgressionPast.w 
@@ -1683,7 +1710,7 @@ from
 									on 
 											  Table1.documentID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
 			)Table2					 
-			where calendardate between '01-MAR-2014' and '01-MAR-2015'
+			where calendardate between '01-MAR-2014' and '28-FEB-2015'
 )Table3
 group by c1
 )AggressionPastCount
@@ -1710,7 +1737,8 @@ left join
 [GateDB_Cris].[dbo].[gate]
  on [GateDB_Cris].[dbo].[gate_hunter_agitation_306].CN_Doc_ID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
  )Table1 
- where calendardate between '01-MAR-2015' and '31-AUG-2015' and mlObservation1 = 'positive'
+ where calendardate between '01-MAR-2015' and '31-AUG-2015' and (mlObservation1 = 'positive' 
+																OR mlObservation1 IS NULL)
  )AgitationRecent
  on 
  Table1.a = AgitationRecent.x
@@ -1731,7 +1759,8 @@ left join
 [GateDB_Cris].[dbo].[gate]
  on [GateDB_Cris].[dbo].[gate_hunter_agitation_306].CN_Doc_ID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
  )Table1 
- where calendardate between '01-MAR-2014' and '01-MAR-2015' and mlObservation1 = 'positive'
+ where calendardate between '01-MAR-2014' and '28-FEB-2015' and (mlObservation1 = 'positive' 
+																OR mlObservation1 IS NULL)
  )AgitationPast
  on 
  Table1.a = AgitationPast.y
@@ -1761,7 +1790,8 @@ from
 															src_table,
 															src_col 
 															from [GateDB_Cris].[dbo].[gate_hunter_agitation_306]
-															where mlObservation1 = 'positive' 
+															where (mlObservation1 = 'positive' 
+																OR mlObservation1 IS NULL) 
 															)Table1											
 									inner join
 											  [GateDB_Cris].[dbo].[gate] 
@@ -1801,14 +1831,15 @@ from
 															src_table,
 															src_col 
 															from [GateDB_Cris].[dbo].[gate_hunter_agitation_306]
-															where mlObservation1 = 'positive'
+															where (mlObservation1 = 'positive' 
+																OR mlObservation1 IS NULL)
 															)Table1											
 									inner join
 											  [GateDB_Cris].[dbo].[gate] 
 									on 
 											  Table1.documentID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
 			)Table2					 
-			where calendardate between '01-MAR-2014' and '01-MAR-2015'
+			where calendardate between '01-MAR-2014' and '28-FEB-2015'
 )Table3
 group by c1
 )AgitationPastCount
@@ -1818,6 +1849,8 @@ group by c1
  Table1.a = AgitationPastCount.c1
  ---------------------------------------------------------------------------------------
 -- Low energy current
+-- There are positive, negative and unknown flags in this energy app. 
+-- There are few instances of positive. Which is why there are not that many instances of energy. 
 
 left join
 (
@@ -1855,7 +1888,7 @@ left join
 [GateDB_Cris].[dbo].[gate]
  on [GateDB_Cris].[dbo].[gate_hunter_energy306].CN_Doc_ID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
  )Table1 
- where calendardate between '01-MAR-2014' and '01-MAR-2015' and mlObservation1 = 'positive'
+ where calendardate between '01-MAR-2014' and '28-FEB-2015' and mlObservation1 = 'positive'
  )EnergyPast
  on 
  Table1.a = EnergyPast.a1
@@ -1932,7 +1965,7 @@ from
 									on 
 											  Table1.documentID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
 			)Table2					 
-			where calendardate between '01-MAR-2014' and '01-MAR-2015'
+			where calendardate between '01-MAR-2014' and '28-FEB-2015'
 )Table3
 group by c1
 )EnergyPastCount
@@ -1942,6 +1975,7 @@ group by c1
  Table1.a = EnergyPastCount.c1
  --------------------------------------------------------------------------------------
 -- Current delusion
+-- Code amended to pull in NULL and positive observations. 
 
 left join
 (
@@ -1958,7 +1992,8 @@ left join
 [GateDB_Cris].[dbo].[gate]
  on [GateDB_Cris].[dbo].[gate_hunter_delusion_306].CN_Doc_ID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
  )Table1 
- where calendardate between '01-MAR-2015' and '31-AUG-2015' and mlObservation1 = 'positive'
+ where calendardate between '01-MAR-2015' and '31-AUG-2015' and (mlObservation1 = 'positive' 
+																OR mlObservation1 IS NULL) 
  )DelusionRecent
  on 
  Table1.a = DelusionRecent.b1
@@ -1979,7 +2014,8 @@ left join
 [GateDB_Cris].[dbo].[gate]
  on [GateDB_Cris].[dbo].[gate_hunter_delusion_306].CN_Doc_ID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
  )Table1 
- where calendardate between '01-MAR-2014' and '01-MAR-2015' and mlObservation1 = 'positive'
+ where calendardate between '01-MAR-2014' and '28-FEB-2015' and (mlObservation1 = 'positive' 
+																OR mlObservation1 IS NULL) 
  )DelusionPast
  on 
  Table1.a = DelusionPast.d1
@@ -2009,7 +2045,8 @@ from
 															src_table,
 															src_col 
 															from [GateDB_Cris].[dbo].[gate_hunter_delusion_306]
-															where mlObservation1 = 'positive'
+															where (mlObservation1 = 'positive' 
+																OR mlObservation1 IS NULL) 
 															)Table1											
 									inner join
 											  [GateDB_Cris].[dbo].[gate] 
@@ -2049,14 +2086,15 @@ from
 															src_table,
 															src_col 
 															from [GateDB_Cris].[dbo].[gate_hunter_delusion_306]
-															where mlObservation1 = 'positive'
+															where (mlObservation1 = 'positive' 
+																OR mlObservation1 IS NULL) 
 															)Table1											
 									inner join
 											  [GateDB_Cris].[dbo].[gate] 
 									on 
 											  Table1.documentID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
 			)Table2					 
-			where calendardate between '01-MAR-2014' and '01-MAR-2015'
+			where calendardate between '01-MAR-2014' and '28-FEB-2015'
 )Table3
 group by c1
 )DelusionPastCount
@@ -2103,7 +2141,7 @@ left join
 [GateDB_Cris].[dbo].[gate]
  on [GateDB_Cris].[dbo].[gate_hunter_appetite_306].CN_Doc_ID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
  )Table1 
- where calendardate between '01-MAR-2014' and '01-MAR-2015' and mlObservation1 = 'negative'
+ where calendardate between '01-MAR-2014' and '28-FEB-2015' and mlObservation1 = 'negative'
  )AppetitePast
  on 
  Table1.a = AppetitePast.f1
@@ -2180,7 +2218,7 @@ from
 									on 
 											  Table1.documentID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
 			)Table2					 
-			where calendardate between '01-MAR-2014' and '01-MAR-2015'
+			where calendardate between '01-MAR-2014' and '28-FEB-2015'
 )Table3
 group by c1
 )AppetitePastCount
@@ -2226,7 +2264,7 @@ left join
 [GateDB_Cris].[dbo].[gate]
  on [GateDB_Cris].[dbo].[gate_hunter_socialwithdraw_306].CN_Doc_ID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
  )Table1 
- where calendardate between '01-MAR-2014' and '01-MAR-2015' and mlObservation1 = 'positive'
+ where calendardate between '01-MAR-2014' and '28-FEB-2015' and mlObservation1 = 'positive'
  )SocWitPast
  on 
  Table1.a = SocWitPast.h1
@@ -2303,7 +2341,7 @@ from
 									on 
 											  Table1.documentID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
 			)Table2					 
-			where calendardate between '01-MAR-2014' and '01-MAR-2015'
+			where calendardate between '01-MAR-2014' and '28-FEB-2015'
 )Table3
 group by c1
 )SocialWithdrawalPastCount
@@ -2350,7 +2388,7 @@ left join
 [GateDB_Cris].[dbo].[gate]
  on [GateDB_Cris].[dbo].[gate_hunter_concentration306].CN_Doc_ID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
  )Table1 
- where calendardate between '01-MAR-2014' and '01-MAR-2015' and mlObservation1 = 'positive'
+ where calendardate between '01-MAR-2014' and '28-FEB-2015' and mlObservation1 = 'positive'
  )concentrationPast
  on 
  Table1.a = concentrationPast.j1
@@ -2427,13 +2465,11 @@ from
 									on 
 											  Table1.documentID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
 			)Table2					 
-			where calendardate between '01-MAR-2014' and '01-MAR-2015'
+			where calendardate between '01-MAR-2014' and '28-FEB-2015'
 )Table3
 group by c1
 )concentrationPastCount
-
  on 
- 
  Table1.a = concentrationPastCount.c1
  -----------------------------------------------------------------------------------------------------
 -- irritable current
@@ -2454,7 +2490,7 @@ left join
 [GateDB_Cris].[dbo].[gate]
  on [GateDB_Cris].[dbo].[gate_hunter_irritable306].CN_Doc_ID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
  )Table1 
- where calendardate between '01-MAR-2015' and '31-AUG-2015'
+ where calendardate between '01-MAR-2015' and '31-AUG-2015' AND mlObservation1 = 'positive'
  )IrritableRecent
  on 
  Table1.a = IrritableRecent.k1
@@ -2475,7 +2511,7 @@ left join
 [GateDB_Cris].[dbo].[gate]
  on [GateDB_Cris].[dbo].[gate_hunter_irritable306].CN_Doc_ID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
  )Table1 
- where calendardate between '01-MAR-2014' and '01-MAR-2015'
+ where calendardate between '01-MAR-2014' and '28-FEB-2015' AND mlObservation1 = 'positive'
  )IrritablePast
  on 
  Table1.a = IrritablePast.l1
@@ -2552,7 +2588,7 @@ from
 									on 
 											  Table1.documentID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
 			)Table2					 
-			where calendardate between '01-MAR-2014' and '01-MAR-2015'
+			where calendardate between '01-MAR-2014' and '28-FEB-2015'
 )Table3
 group by c1
 )IrritablePastCount
@@ -2724,7 +2760,7 @@ left join
 [GateDB_Cris].[dbo].[gate]
  on [GateDB_Cris].[dbo].[gate_hunter_low_mood_306].CN_Doc_ID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
  )Table1 
- where calendardate between '01-MAR-2014' and '30-APR-2015' and mlObservation1 = 'positive'
+ where calendardate between '01-MAR-2014' and '28-FEB-2015' and mlObservation1 = 'positive'
  )LowMoodPast
  on 
  Table1.a = LowMoodPast.r1
@@ -2801,7 +2837,7 @@ from
 									on 
 											  Table1.documentID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
 			)Table2					 
-			where calendardate between '01-MAR-2014' and '30-APR-2015'
+			where calendardate between '01-MAR-2014' and '28-FEB-2015'
 )Table3
 group by c1
 )LowMoodPastCount
@@ -2983,7 +3019,7 @@ left join
 									[SQLCrisImport].[dbo].[tbl_gate_hunter_compliance]
 									) Table1
 				where 
-				Table1.AdherenceMentionDocDate between '01-MAR-2014' and '30-APR-2015'
+				Table1.AdherenceMentionDocDate between '01-MAR-2014' and '28-FEB-2015'
 				) Table2
 where mlObservation1 like 'positive'
 group by BrcId
@@ -3040,7 +3076,7 @@ left join
 										 , Session_n as SessionNumber
 										 , CN_DOC_ID
 									from   SQLCRISIMPORT.dbo.tbl_cbt_combined_current
-									where Session_Date between '01-MAR-2014' and '30-APR-2015'
+									where Session_Date between '01-MAR-2014' and '28-FEB-2015'
 							)as PsychoTherapyIndicator
 			) PsychoTherapyIndicator2
 		where PsychoTherapyIndicator2.ranking = '1'
@@ -3062,62 +3098,62 @@ select distinct brcid as APsychBrcidPast
      , Rank () over (Partition by brcid order by [SQLCRIS_User].[dbo].[andreamedicationtable].id DESC ) as ranking
 FROM [SQLCRIS_User].[dbo].[andreamedicationtable]
 where 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '30-APR-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%chlorpromazin%')) or
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '30-APR-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%largactil%')) or  
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '30-APR-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%levomepromazin%')) or
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '30-APR-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%methotrimeprazin%')) or
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '30-APR-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%nozinan%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '30-APR-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%promazin%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '30-APR-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%pericyazin%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '30-APR-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%periciazin%')) or
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '30-APR-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%neulactil%')) or
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '30-APR-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%pipotiazin%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '30-APR-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%fluphenazin%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '30-APR-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%perphenazin%')) or
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '30-APR-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%fentazin%')) or
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '30-APR-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%prochlorperazin%')) or
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '30-APR-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%trifluoperazin%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '30-APR-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%stelazin%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '30-APR-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%benperidol%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '30-APR-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%haloperidol%')) or
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '30-APR-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%dozic%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '30-APR-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%haldol%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '30-APR-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%serenace%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '30-APR-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%pimozid%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '30-APR-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%orap%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '30-APR-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%flupentixol%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '30-APR-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%fluphenazin%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '30-APR-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%modecat%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '30-APR-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%depixol%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '30-APR-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%zuclopenthixol%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '30-APR-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%clopixol%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '30-APR-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%sulpirid%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '30-APR-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%dolmatil%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '30-APR-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%sulpor%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '30-APR-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%amisulpride%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '30-APR-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%solian%')) or
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '30-APR-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%clozapin%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '30-APR-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%clozaril%')) or
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '30-APR-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%denzapine%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '30-APR-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%zaponex%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '30-APR-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%olanzapin%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '30-APR-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%zyprexa%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '30-APR-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%quetiapin%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '30-APR-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%seroquel%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '30-APR-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%risperid%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '30-APR-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%sertindol%')) or
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '30-APR-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%serdolect%')) or  
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '30-APR-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%zotepin%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '30-APR-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%zoleptil%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '30-APR-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%aripiprazol%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '30-APR-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%abilify%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '30-APR-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%paliperidone%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '30-APR-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%invega%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '30-APR-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%pipotiazin%')) or
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '30-APR-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%pipothiazin%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '30-APR-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%piportil%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '30-APR-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%zuclopenthixol%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '30-APR-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%clopixol%'))
+(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%chlorpromazin%')) or
+(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%largactil%')) or  
+(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%levomepromazin%')) or
+(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%methotrimeprazin%')) or
+(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%nozinan%')) or 
+(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%promazin%')) or 
+(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%pericyazin%')) or 
+(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%periciazin%')) or
+(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%neulactil%')) or
+(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%pipotiazin%')) or 
+(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%fluphenazin%')) or 
+(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%perphenazin%')) or
+(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%fentazin%')) or
+(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%prochlorperazin%')) or
+(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%trifluoperazin%')) or 
+(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%stelazin%')) or 
+(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%benperidol%')) or 
+(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%haloperidol%')) or
+(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%dozic%')) or 
+(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%haldol%')) or 
+(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%serenace%')) or 
+(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%pimozid%')) or 
+(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%orap%')) or 
+(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%flupentixol%')) or 
+(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%fluphenazin%')) or 
+(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%modecat%')) or 
+(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%depixol%')) or 
+(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%zuclopenthixol%')) or 
+(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%clopixol%')) or 
+(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%sulpirid%')) or 
+(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%dolmatil%')) or 
+(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%sulpor%')) or 
+(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%amisulpride%')) or 
+(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%solian%')) or
+(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%clozapin%')) or 
+(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%clozaril%')) or
+(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%denzapine%')) or 
+(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%zaponex%')) or 
+(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%olanzapin%')) or 
+(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%zyprexa%')) or 
+(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%quetiapin%')) or 
+(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%seroquel%')) or 
+(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%risperid%')) or 
+(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%sertindol%')) or
+(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%serdolect%')) or  
+(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%zotepin%')) or 
+(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%zoleptil%')) or 
+(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%aripiprazol%')) or 
+(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%abilify%')) or 
+(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%paliperidone%')) or 
+(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%invega%')) or 
+(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%pipotiazin%')) or
+(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%pipothiazin%')) or 
+(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%piportil%')) or 
+(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%zuclopenthixol%')) or 
+(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%clopixol%'))
 ) as AntiPsychoticIndication
 where AntiPsychoticIndication.ranking = '1'
 ) as AntiPsychoticSnapshotPast
@@ -3271,36 +3307,36 @@ select distinct brcid as BenzoPastBrcid
      , Rank () over (Partition by brcid order by [SQLCRIS_User].[dbo].[andreamedicationtable].id DESC ) as ranking
 FROM [SQLCRIS_User].[dbo].[andreamedicationtable]
 where 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '30-APR-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%quazepam%')) or
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '30-APR-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%doral%')) or  
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '30-APR-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%niravam%')) or
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '30-APR-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%alprazolam%')) or
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '30-APR-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%prosom%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '30-APR-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%estazolam%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '30-APR-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%dalmane%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '30-APR-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%flurazepam%')) or
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '30-APR-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%diazepam%')) or
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '30-APR-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%xanax%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '30-APR-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%librium%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '30-APR-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%chlordiazepoxide%')) or
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '30-APR-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%tranxene%')) or
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '30-APR-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%clorazepate%')) or
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '30-APR-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%klonopin%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '30-APR-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%clonazepam%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '30-APR-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%serax%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '30-APR-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%oxazepam%')) or
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '30-APR-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%valium%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '30-APR-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%diastat%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '30-APR-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%ativan%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '30-APR-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%lorazepam%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '30-APR-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%halcion%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '30-APR-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%triazolam%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '30-APR-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%restoril%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '30-APR-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%temazepam%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '30-APR-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%versed%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '30-APR-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%midazolam%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '30-APR-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%onfi%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '30-APR-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%clobazam%'))
+(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%quazepam%')) or
+(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%doral%')) or  
+(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%niravam%')) or
+(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%alprazolam%')) or
+(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%prosom%')) or 
+(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%estazolam%')) or 
+(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%dalmane%')) or 
+(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%flurazepam%')) or
+(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%diazepam%')) or
+(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%xanax%')) or 
+(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%librium%')) or 
+(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%chlordiazepoxide%')) or
+(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%tranxene%')) or
+(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%clorazepate%')) or
+(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%klonopin%')) or 
+(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%clonazepam%')) or 
+(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%serax%')) or 
+(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%oxazepam%')) or
+(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%valium%')) or 
+(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%diastat%')) or 
+(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%ativan%')) or 
+(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%lorazepam%')) or 
+(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%halcion%')) or 
+(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%triazolam%')) or 
+(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%restoril%')) or 
+(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%temazepam%')) or 
+(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%versed%')) or 
+(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%midazolam%')) or 
+(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%onfi%')) or 
+(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%clobazam%'))
 ) as BenzoIndication
 where BenzoIndication.ranking = '1'
 ) 
@@ -3351,11 +3387,11 @@ select distinct brcid as LithiumBrcIdPast
      , Rank () over (Partition by brcid order by [SQLCRIS_User].[dbo].[andreamedicationtable].id DESC) as ranking
 FROM [SQLCRIS_User].[dbo].[andreamedicationtable]
 where 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2014' and '30-APR-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%lithium%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2014' and '30-APR-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%camcolit%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2014' and '30-APR-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%liskonum%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2014' and '30-APR-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%li-liquid%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2014' and '30-APR-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%priadel%')) 
+(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%lithium%')) or 
+(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%camcolit%')) or 
+(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%liskonum%')) or 
+(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%li-liquid%')) or 
+(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%priadel%')) 
 
 ) as PastLithiumIndication
 where PastLithiumIndication.ranking = '1'
