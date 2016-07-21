@@ -1,8 +1,13 @@
 select * into SQLCRIS_USER.DBO.AFERNANDES_Antidepressant_Profile_cohort_July2016_corrected_6month_V3
+
 --v3 is without spell data to avoid duplicate row generation. my cohort has 3991 people and there 
 -- are duplicate rows in the Referall data. they are exactly the same but with different cndocids. 
+
+select * into SQLCRIS_USER.DBO.AFERNANDES_Antidepressant_Profile_cohort_July2016_corrected_6month_V2
 -- v2 is with spell data and hence my cohort has duplicate rows. So instead of 3991 people I have 4224
 -- patients. 
+
+-- I've left all coding this in code for future. But I'm excluding any data on 
 
 
 from 
@@ -2919,7 +2924,10 @@ group by c1
 --Accepted_Date as Accepted_Date2,
 --Discharge_Date as Discharge_Date2,
 --RANK () OVER (PARTITION BY TableTesting.brcid 
---				ORDER BY (ABS(DATEDIFF(DD,'01-MAR-2015',TableTesting.Accepted_Date))) ASC, TableTesting.CN_Doc_ID) as Ranking
+--				ORDER BY (ABS(DATEDIFF(DD,
+--							  '01-MAR-2015',
+--							  TableTesting.Accepted_Date))) ASC, 
+--              TableTesting.CN_Doc_ID) as Ranking
 
 --from
 
