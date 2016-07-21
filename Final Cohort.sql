@@ -1,4 +1,4 @@
--- Final cohort with variables. Duplicate ids because of faulty EPR forms. 
+-- Final cohort with variables. 
 
 SELECT [diagnosis_date]
       ,[primary_diagnosis]
@@ -195,7 +195,8 @@ SELECT COUNT(distinct(a))
   FROM [SQLCRIS_User].[dbo].[AFERNANDES_AD_Profile_cohort_MAR15_AUG15_corrected]
 GO
 
--- 3991 IDs. 
+-- 3991 IDs. Duplicate ids because of faulty EPR forms. 
+-- There are rows with exactly the same data but with different cn_doc_ids. 
 
 
 

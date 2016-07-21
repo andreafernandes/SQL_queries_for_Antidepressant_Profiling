@@ -1,9 +1,9 @@
-select * into SQLCRIS_USER.DBO.AFERNANDES_Antidepressant_Profile_cohort_July2016_corrected_6month_V3
+select * into SQLCRIS_USER.DBO.AFERNANDES_AD_Profile_cohort_MAR15_AUG15_corrected
 
 --v3 is without spell data to avoid duplicate row generation. my cohort has 3991 people and there 
 -- are duplicate rows in the Referall data. they are exactly the same but with different cndocids. 
 
-select * into SQLCRIS_USER.DBO.AFERNANDES_Antidepressant_Profile_cohort_July2016_corrected_6month_V2
+--select * into SQLCRIS_USER.DBO.AFERNANDES_Antidepressant_Profile_cohort_July2016_corrected_6month_V2
 -- v2 is with spell data and hence my cohort has duplicate rows. So instead of 3991 people I have 4224
 -- patients. 
 
@@ -84,13 +84,13 @@ select
    ethnicitycleaned
    ,cleaneddateofbirth
    ,Gender_ID
-   --,SpellTable.Spell_Number
+   ,SpellTable.Spell_Number
    ,Marital_Status_ID
-   --,LatestNumberOfSpells
-   --,Accepted_Date
-   --,Discharge_Date
-   --,Accepted_Date2
-   --,Discharge_Date2
+   ----,LatestNumberOfSpells
+   ,Accepted_Date
+   ,Discharge_Date
+   ,Accepted_Date2
+   ,Discharge_Date2
    ,Agitated_Behaviour_Score_ID,
 	Self_Injury_Score_ID,
 	Problem_Drinking_Drugs_Score_ID,
@@ -223,11 +223,11 @@ from
 
 
 (
-select * from SQLCris_User.dbo.Afernandes_Active_Referrals_MAR15_AUG15
+select * from SQLCris_User.dbo.Afernandes_Active_Referrals_MAR15_AUG15 -- this table is fine. AF rechecked.
 
 inner join 
 
-SQLCRIS_User.dbo.AFernandes_DepDiag_bef_MAR15_AUG15
+SQLCRIS_User.dbo.AFernandes_DepDiag_bef_MAR15_AUG15 -- this table is fine. AF rechecked.
 on SQLCRIS_User.dbo.AFernandes_DepDiag_bef_MAR15_AUG15.a = SQLCris_User.dbo.Afernandes_Active_Referrals_MAR15_AUG15.brcid
 ) 
 Table1   
@@ -236,7 +236,7 @@ Table1
 
 left join 
 
-SQLCRIS_User.dbo.Afernandes_Antidepressant_MAR15_AUG15_with_dates
+SQLCRIS_User.dbo.Afernandes_Antidepressant_MAR15_AUG15_with_dates -- this table is fine. AF rechecked.
 
 on Table1.a = SQLCRIS_User.dbo.Afernandes_Antidepressant_MAR15_AUG15_with_dates.PatientonAD
 -------------------------------------------------------------------------------------------------
@@ -2860,105 +2860,105 @@ group by c1
 ----joining number of spell data, for the patients who have a face to face contact between 1st mar 2015 and 31st 
 ---- dec 2015 to get hteir closest spell date to start of observation period. 
 
---left join
+left join
 
---(
---select *
+(
+select *
 
---from 
+from 
 
---(
---select Spell_Number,
---brcid,
---Accepted_Date,
---Discharge_Date,
---RANK () OVER (PARTITION BY TableTesting.brcid 
---				ORDER BY (ABS(DATEDIFF(DD,'01-MAR-2015',TableTesting.Accepted_Date))) ASC, TableTesting.CN_Doc_ID) as Ranking
+(
+select Spell_Number,
+brcid,
+Accepted_Date,
+Discharge_Date,
+RANK () OVER (PARTITION BY TableTesting.brcid 
+				ORDER BY (ABS(DATEDIFF(DD,'01-MAR-2015',TableTesting.Accepted_Date))) ASC, TableTesting.CN_Doc_ID) as Ranking
 
---from
+from
 
---(
---select 
---SQLCRIS.DBO.Event.brcid, 
---SQLCRIS.DBO.Event.CN_Doc_ID,
---SQLCRIS.DBO.Event.Start_Date, 
---Referral.Spell_Number, 
---Referral.Accepted_Date,
---Referral.Discharge_Date
---from SQLCRIS.DBO.Event
+(
+select 
+SQLCRIS.DBO.Event.brcid, 
+SQLCRIS.DBO.Event.CN_Doc_ID,
+SQLCRIS.DBO.Event.Start_Date, 
+Referral.Spell_Number, 
+Referral.Accepted_Date,
+Referral.Discharge_Date
+from SQLCRIS.DBO.Event
 
---left join
+left join
 
---SQLCRIS.DBO.Referral
+SQLCRIS.DBO.Referral
 
---on Event.brcid = Referral.BrcId
+on Event.brcid = Referral.BrcId
 
---where   (EVENT.Start_Date BETWEEN '01-MAR-2015' and '31-AUG-2015')
---		AND
---		(eVENT.Event_Type_Of_Contact_ID LIKE '%face%')
+where   (EVENT.Start_Date BETWEEN '01-MAR-2015' and '31-AUG-2015')
+		AND
+		(eVENT.Event_Type_Of_Contact_ID LIKE '%face%')
 
---)TableTesting
---) TableTesting2
---where Ranking = 1
---) SpellTable
+)TableTesting
+) TableTesting2
+where Ranking = 1
+) SpellTable
 
---on 
+on 
 
---Table1.a = SpellTable.BrcId  
------------------------------------------------------------------------------------------------------
+Table1.a = SpellTable.BrcId  
+---------------------------------------------------------------------------------------------------
 
 
-----joining number of spell data, for the patients who have a face to face contact between 1st mar 2015 and 31st 
----- dec 2015 to get hteir closest spell date to start of observation period. 
+--joining number of spell data, for the patients who have a face to face contact between 1st mar 2015 and 31st 
+-- dec 2015 to get hteir closest spell date to start of observation period. 
 
---left join
+left join
 
---(
---select *
+(
+select *
 
---from 
+from 
 
---(
---select Spell_Number as SpellNumber2,
---brcid ,
---Accepted_Date as Accepted_Date2,
---Discharge_Date as Discharge_Date2,
---RANK () OVER (PARTITION BY TableTesting.brcid 
---				ORDER BY (ABS(DATEDIFF(DD,
---							  '01-MAR-2015',
---							  TableTesting.Accepted_Date))) ASC, 
---              TableTesting.CN_Doc_ID) as Ranking
+(
+select Spell_Number as SpellNumber2,
+brcid ,
+Accepted_Date as Accepted_Date2,
+Discharge_Date as Discharge_Date2,
+RANK () OVER (PARTITION BY TableTesting.brcid 
+				ORDER BY (ABS(DATEDIFF(DD,
+							  '01-MAR-2015',
+							  TableTesting.Accepted_Date))) ASC, 
+              TableTesting.CN_Doc_ID) as Ranking
 
---from
+from
 
---(
---select 
---SQLCRIS.DBO.Event.brcid, 
---SQLCRIS.DBO.Event.CN_Doc_ID,
---SQLCRIS.DBO.Event.Start_Date, 
---Referral.Spell_Number, 
---Referral.Accepted_Date,
---Referral.Discharge_Date
---from SQLCRIS.DBO.Event
+(
+select 
+SQLCRIS.DBO.Event.brcid, 
+SQLCRIS.DBO.Event.CN_Doc_ID,
+SQLCRIS.DBO.Event.Start_Date, 
+Referral.Spell_Number, 
+Referral.Accepted_Date,
+Referral.Discharge_Date
+from SQLCRIS.DBO.Event
 
---left join
+left join
 
---SQLCRIS.DBO.Referral
+SQLCRIS.DBO.Referral
 
---on Event.brcid = Referral.BrcId
+on Event.brcid = Referral.BrcId
 
---where   (EVENT.Start_Date BETWEEN '01-MAR-2015' and '31-AUG-2015')
---		AND
---		(eVENT.Event_Type_Of_Contact_ID LIKE '%face%')
+where   (EVENT.Start_Date BETWEEN '01-MAR-2015' and '31-AUG-2015')
+		AND
+		(eVENT.Event_Type_Of_Contact_ID LIKE '%face%')
 
---)TableTesting
---) TableTesting2_AnotherReferral
---where Ranking = 2
---) SpellTable2
+)TableTesting
+) TableTesting2_AnotherReferral
+where Ranking = 2
+) SpellTable2
 
---on 
+on 
 
---Table1.a = SpellTable2.BrcId  
+Table1.a = SpellTable2.BrcId  
 
 -------------------------------------------------------------------------------
 
@@ -3107,67 +3107,67 @@ select *
 from 
 (
 select distinct brcid as APsychBrcidPast
-     , [SQLCRIS_User].[dbo].[andreamedicationtable].drug  as AntiPsychoticFlagPast
-     , [SQLCRIS_User].[dbo].[andreamedicationtable].start_date as AntiPsychoticDatePast
-     , Rank () over (Partition by brcid order by [SQLCRIS_User].[dbo].[andreamedicationtable].id DESC ) as ranking
-FROM [SQLCRIS_User].[dbo].[andreamedicationtable]
+     , [SQLCrisImport].[dbo].[medication_combined].drug  as AntiPsychoticFlagPast
+     , [SQLCrisImport].[dbo].[medication_combined].start_date as AntiPsychoticDatePast
+     , Rank () over (Partition by brcid order by [SQLCrisImport].[dbo].[medication_combined].id DESC ) as ranking
+FROM [SQLCrisImport].[dbo].[medication_combined]
 where 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%chlorpromazin%')) or
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%largactil%')) or  
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%levomepromazin%')) or
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%methotrimeprazin%')) or
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%nozinan%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%promazin%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%pericyazin%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%periciazin%')) or
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%neulactil%')) or
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%pipotiazin%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%fluphenazin%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%perphenazin%')) or
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%fentazin%')) or
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%prochlorperazin%')) or
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%trifluoperazin%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%stelazin%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%benperidol%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%haloperidol%')) or
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%dozic%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%haldol%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%serenace%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%pimozid%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%orap%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%flupentixol%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%fluphenazin%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%modecat%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%depixol%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%zuclopenthixol%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%clopixol%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%sulpirid%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%dolmatil%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%sulpor%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%amisulpride%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%solian%')) or
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%clozapin%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%clozaril%')) or
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%denzapine%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%zaponex%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%olanzapin%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%zyprexa%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%quetiapin%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%seroquel%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%risperid%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%sertindol%')) or
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%serdolect%')) or  
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%zotepin%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%zoleptil%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%aripiprazol%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%abilify%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%paliperidone%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%invega%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%pipotiazin%')) or
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%pipothiazin%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%piportil%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%zuclopenthixol%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%clopixol%'))
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%chlorpromazin%')) or
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%largactil%')) or  
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%levomepromazin%')) or
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%methotrimeprazin%')) or
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%nozinan%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%promazin%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%pericyazin%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%periciazin%')) or
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%neulactil%')) or
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%pipotiazin%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%fluphenazin%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%perphenazin%')) or
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%fentazin%')) or
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%prochlorperazin%')) or
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%trifluoperazin%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%stelazin%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%benperidol%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%haloperidol%')) or
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%dozic%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%haldol%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%serenace%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%pimozid%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%orap%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%flupentixol%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%fluphenazin%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%modecat%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%depixol%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%zuclopenthixol%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%clopixol%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%sulpirid%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%dolmatil%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%sulpor%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%amisulpride%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%solian%')) or
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%clozapin%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%clozaril%')) or
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%denzapine%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%zaponex%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%olanzapin%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%zyprexa%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%quetiapin%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%seroquel%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%risperid%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%sertindol%')) or
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%serdolect%')) or  
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%zotepin%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%zoleptil%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%aripiprazol%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%abilify%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%paliperidone%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%invega%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%pipotiazin%')) or
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%pipothiazin%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%piportil%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%zuclopenthixol%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%clopixol%'))
 ) as AntiPsychoticIndication
 where AntiPsychoticIndication.ranking = '1'
 ) as AntiPsychoticSnapshotPast
@@ -3183,67 +3183,67 @@ select *
 from 
 (
 select distinct brcid as APsychBrcid
-     , [SQLCRIS_User].[dbo].[andreamedicationtable].drug  as AntiPsychoticFlag
-     , [SQLCRIS_User].[dbo].[andreamedicationtable].start_date as AntiPsychoticDate
-     , Rank () over (Partition by brcid order by [SQLCRIS_User].[dbo].[andreamedicationtable].id DESC ) as ranking
-FROM [SQLCRIS_User].[dbo].[andreamedicationtable]
+     , [SQLCrisImport].[dbo].[medication_combined].drug  as AntiPsychoticFlag
+     , [SQLCrisImport].[dbo].[medication_combined].start_date as AntiPsychoticDate
+     , Rank () over (Partition by brcid order by [SQLCrisImport].[dbo].[medication_combined].id DESC ) as ranking
+FROM [SQLCrisImport].[dbo].[medication_combined]
 where 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%chlorpromazin%')) or
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%largactil%')) or  
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%levomepromazin%')) or
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%methotrimeprazin%')) or
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%nozinan%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%promazin%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%pericyazin%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%periciazin%')) or
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%neulactil%')) or
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%pipotiazin%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%fluphenazin%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%perphenazin%')) or
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%fentazin%')) or
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%prochlorperazin%')) or
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%trifluoperazin%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%stelazin%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%benperidol%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%haloperidol%')) or
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%dozic%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%haldol%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%serenace%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%pimozid%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%orap%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%flupentixol%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%fluphenazin%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%modecat%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%depixol%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%zuclopenthixol%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%clopixol%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%sulpirid%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%dolmatil%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%sulpor%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%amisulpride%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%solian%')) or
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%clozapin%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%clozaril%')) or
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%denzapine%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%zaponex%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%olanzapin%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%zyprexa%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%quetiapin%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%seroquel%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%risperid%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%sertindol%')) or
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%serdolect%')) or  
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%zotepin%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%zoleptil%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%aripiprazol%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%abilify%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%paliperidone%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%invega%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%pipotiazin%')) or
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%pipothiazin%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%piportil%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%zuclopenthixol%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%clopixol%'))
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%chlorpromazin%')) or
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%largactil%')) or  
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%levomepromazin%')) or
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%methotrimeprazin%')) or
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%nozinan%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%promazin%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%pericyazin%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%periciazin%')) or
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%neulactil%')) or
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%pipotiazin%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%fluphenazin%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%perphenazin%')) or
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%fentazin%')) or
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%prochlorperazin%')) or
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%trifluoperazin%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%stelazin%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%benperidol%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%haloperidol%')) or
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%dozic%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%haldol%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%serenace%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%pimozid%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%orap%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%flupentixol%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%fluphenazin%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%modecat%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%depixol%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%zuclopenthixol%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%clopixol%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%sulpirid%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%dolmatil%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%sulpor%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%amisulpride%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%solian%')) or
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%clozapin%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%clozaril%')) or
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%denzapine%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%zaponex%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%olanzapin%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%zyprexa%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%quetiapin%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%seroquel%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%risperid%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%sertindol%')) or
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%serdolect%')) or  
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%zotepin%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%zoleptil%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%aripiprazol%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%abilify%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%paliperidone%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%invega%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%pipotiazin%')) or
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%pipothiazin%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%piportil%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%zuclopenthixol%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%clopixol%'))
 ) as AntiPsychoticIndication
 where AntiPsychoticIndication.ranking = '1'
 ) as AntiPsychoticSnapshot
@@ -3264,41 +3264,41 @@ select *
 from 
 (
 select distinct brcid as BenzoBrcid
-     , [SQLCRIS_User].[dbo].[andreamedicationtable].drug  as BenzoFlag
-     , [SQLCRIS_User].[dbo].[andreamedicationtable].start_date as BenzoDate
-     , Rank () over (Partition by brcid order by [SQLCRIS_User].[dbo].[andreamedicationtable].id DESC ) as ranking
-FROM [SQLCRIS_User].[dbo].[andreamedicationtable]
+     , [SQLCrisImport].[dbo].[medication_combined].drug  as BenzoFlag
+     , [SQLCrisImport].[dbo].[medication_combined].start_date as BenzoDate
+     , Rank () over (Partition by brcid order by [SQLCrisImport].[dbo].[medication_combined].id DESC ) as ranking
+FROM [SQLCrisImport].[dbo].[medication_combined]
 where 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%quazepam%')) or
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%doral%')) or  
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%niravam%')) or
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%alprazolam%')) or
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%prosom%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%estazolam%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%dalmane%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%flurazepam%')) or
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%diazepam%')) or
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%xanax%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%librium%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%chlordiazepoxide%')) or
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%tranxene%')) or
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%clorazepate%')) or
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%klonopin%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%clonazepam%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%serax%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%oxazepam%')) or
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%valium%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%diastat%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%ativan%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%lorazepam%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%halcion%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%triazolam%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%restoril%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%temazepam%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%versed%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%midazolam%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%onfi%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%clobazam%'))
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%quazepam%')) or
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%doral%')) or  
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%niravam%')) or
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%alprazolam%')) or
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%prosom%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%estazolam%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%dalmane%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%flurazepam%')) or
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%diazepam%')) or
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%xanax%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%librium%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%chlordiazepoxide%')) or
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%tranxene%')) or
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%clorazepate%')) or
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%klonopin%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%clonazepam%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%serax%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%oxazepam%')) or
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%valium%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%diastat%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%ativan%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%lorazepam%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%halcion%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%triazolam%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%restoril%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%temazepam%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%versed%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%midazolam%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%onfi%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2015' and '31-AUG-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%clobazam%'))
 ) as BenzoIndication
 where BenzoIndication.ranking = '1'
 ) 
@@ -3316,41 +3316,41 @@ select *
 from 
 (
 select distinct brcid as BenzoPastBrcid
-     , [SQLCRIS_User].[dbo].[andreamedicationtable].drug  as BenzoPastFlag
-     , [SQLCRIS_User].[dbo].[andreamedicationtable].start_date as BenzoPastDate
-     , Rank () over (Partition by brcid order by [SQLCRIS_User].[dbo].[andreamedicationtable].id DESC ) as ranking
-FROM [SQLCRIS_User].[dbo].[andreamedicationtable]
+     , [SQLCrisImport].[dbo].[medication_combined].drug  as BenzoPastFlag
+     , [SQLCrisImport].[dbo].[medication_combined].start_date as BenzoPastDate
+     , Rank () over (Partition by brcid order by [SQLCrisImport].[dbo].[medication_combined].id DESC ) as ranking
+FROM [SQLCrisImport].[dbo].[medication_combined]
 where 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%quazepam%')) or
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%doral%')) or  
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%niravam%')) or
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%alprazolam%')) or
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%prosom%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%estazolam%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%dalmane%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%flurazepam%')) or
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%diazepam%')) or
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%xanax%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%librium%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%chlordiazepoxide%')) or
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%tranxene%')) or
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%clorazepate%')) or
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%klonopin%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%clonazepam%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%serax%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%oxazepam%')) or
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%valium%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%diastat%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%ativan%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%lorazepam%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%halcion%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%triazolam%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%restoril%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%temazepam%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%versed%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%midazolam%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%onfi%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%clobazam%'))
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%quazepam%')) or
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%doral%')) or  
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%niravam%')) or
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%alprazolam%')) or
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%prosom%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%estazolam%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%dalmane%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%flurazepam%')) or
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%diazepam%')) or
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%xanax%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%librium%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%chlordiazepoxide%')) or
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%tranxene%')) or
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%clorazepate%')) or
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%klonopin%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%clonazepam%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%serax%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%oxazepam%')) or
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%valium%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%diastat%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%ativan%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%lorazepam%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%halcion%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%triazolam%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%restoril%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%temazepam%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%versed%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%midazolam%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%onfi%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date between '01-MAR-2014' and '28-FEB-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%clobazam%'))
 ) as BenzoIndication
 where BenzoIndication.ranking = '1'
 ) 
@@ -3368,16 +3368,16 @@ select *
 from 
 (
 select distinct brcid as LithiumBrcId
-     , [SQLCRIS_User].[dbo].[andreamedicationtable].drug  as CurrentLithium
-     , [SQLCRIS_User].[dbo].[andreamedicationtable].start_date as CurrentLithiumdate
-     , Rank () over (Partition by brcid order by [SQLCRIS_User].[dbo].[andreamedicationtable].id DESC) as ranking
-FROM [SQLCRIS_User].[dbo].[andreamedicationtable]
+     , [SQLCrisImport].[dbo].[medication_combined].drug  as CurrentLithium
+     , [SQLCrisImport].[dbo].[medication_combined].start_date as CurrentLithiumdate
+     , Rank () over (Partition by brcid order by [SQLCrisImport].[dbo].[medication_combined].id DESC) as ranking
+FROM [SQLCrisImport].[dbo].[medication_combined]
 where 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2015' and '31-AUG-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%lithium%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2015' and '31-AUG-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%camcolit%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2015' and '31-AUG-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%liskonum%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2015' and '31-AUG-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%li-liquid%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2015' and '31-AUG-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%priadel%')) 
+(([SQLCrisImport].[dbo].[medication_combined].start_date BETWEEN '01-MAR-2015' and '31-AUG-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%lithium%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date BETWEEN '01-MAR-2015' and '31-AUG-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%camcolit%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date BETWEEN '01-MAR-2015' and '31-AUG-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%liskonum%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date BETWEEN '01-MAR-2015' and '31-AUG-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%li-liquid%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date BETWEEN '01-MAR-2015' and '31-AUG-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%priadel%')) 
 
 ) as CurrentLithiumIndication
 where CurrentLithiumIndication.ranking = '1'
@@ -3396,16 +3396,16 @@ select *
 from 
 (
 select distinct brcid as LithiumBrcIdPast
-     , [SQLCRIS_User].[dbo].[andreamedicationtable].drug  as PastLithium
-     , [SQLCRIS_User].[dbo].[andreamedicationtable].start_date as PastLithiumdate
-     , Rank () over (Partition by brcid order by [SQLCRIS_User].[dbo].[andreamedicationtable].id DESC) as ranking
-FROM [SQLCRIS_User].[dbo].[andreamedicationtable]
+     , [SQLCrisImport].[dbo].[medication_combined].drug  as PastLithium
+     , [SQLCrisImport].[dbo].[medication_combined].start_date as PastLithiumdate
+     , Rank () over (Partition by brcid order by [SQLCrisImport].[dbo].[medication_combined].id DESC) as ranking
+FROM [SQLCrisImport].[dbo].[medication_combined]
 where 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%lithium%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%camcolit%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%liskonum%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%li-liquid%')) or 
-(([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015') and ([SQLCRIS_User].[dbo].[andreamedicationtable].drug like '%priadel%')) 
+(([SQLCrisImport].[dbo].[medication_combined].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%lithium%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%camcolit%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%liskonum%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%li-liquid%')) or 
+(([SQLCrisImport].[dbo].[medication_combined].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015') and ([SQLCrisImport].[dbo].[medication_combined].drug like '%priadel%')) 
 
 ) as PastLithiumIndication
 where PastLithiumIndication.ranking = '1'
@@ -3428,90 +3428,90 @@ select *
 from 
 (
 select distinct brcid as PastADBrcid
-     , [SQLCRIS_User].[dbo].[andreamedicationtable].drug  as PastAD
-     , [SQLCRIS_User].[dbo].[andreamedicationtable].start_date as PastADdate
-     , Rank () over (Partition by brcid order by [SQLCRIS_User].[dbo].[andreamedicationtable].id DESC) as ranking
-FROM [SQLCRIS_User].[dbo].[andreamedicationtable]
+     , [SQLCrisImport].[dbo].[medication_combined].drug  as PastAD
+     , [SQLCrisImport].[dbo].[medication_combined].start_date as PastADdate
+     , Rank () over (Partition by brcid order by [SQLCrisImport].[dbo].[medication_combined].id DESC) as ranking
+FROM [SQLCrisImport].[dbo].[medication_combined]
 where 
 
-([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  AND drug like '%tca%') or 
-([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%tricyclic%') or 
-([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%amitriptyline%') or 
-([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%vanatrip%') or 
-([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%elavil%') or 
-([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%endep%') or  --frOM drugs.COm 
-([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and DRuG LIKE '%triptaf%')  or --COnTAInS AMItRIpTyLINe AnD PErPHEnAZInE 
-([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%clomipramin%') or
-([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%anafranil%') or
-([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%dosulepin%') or 
-([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%dothiepin%') or --PreViOuSLy KnoWN As DoTHIEPIN 
-([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%prothiden%') or
-([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and	drug like '%prothiaden%') or
-([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%doxepin%') or
-([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%sinepin%') or
-([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%sineq%')  or --FroM drug.SCOm 
-([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and	drug like '%xepin%') or --FRom DRUGS.CoM
-([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%imipramine%') or  
-([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%tofranil%') or -- FroM DrUGS.coM
-([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%lofepramine%') or 
-([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and	drug like '%lomont%') or -- FroM DrUGS.coM
-([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%nortriptyli%') or
-([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%pamelo%') or
-([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%allegr%') or
-([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%aventyl%') or
-([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%trimipram%') or
-([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%surmonti%') or
-([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%mianserin%') or
-([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%trazodone%') or
-([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%molipaxin%') or
-([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and	drug like '%phenelzine%') or
-([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%phenylethylhydrazine%') or
-([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%alazin%') or
-([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%nardil%')  or
-([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%isocarboxazid%')  or
-([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%tranylcypromin%') or
-([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%moclobemide%') or
-([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%manerix%') or
-([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and Drug like 'citalopram%') or
-([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%cipramil%') or
-([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%celexa%') or
-([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%escitalopram%') or
-([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%cipralex%') or
-([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%lexapro%') or
-([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%fluoxetine%') or
-([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%prozac%') or
-([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%sarafem%') or
-([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%bellzac%') or --from drugs.com; used in Ireland
-([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%oxactin%') or --from drugs.com; drug company: Discovery
-([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%fluvoxamine%') or 
-([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%faverin%') or 
-([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like'%paroxetin%' ) or
-([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%paxil%') or  --from drugs.com; not specified for UK use but used in US
-([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%seroxat%' ) or
-([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%sertra%' ) or 
-([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%bellsert%') or  --from drugs.com; used in Ireland
-([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%lustral%' ) or
-([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%seretra%' ) or --from drugs.com; used in Ireland   
-([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%zoloft%') or   -- from drugs.come; not specified for UK but used in US
-([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%mirtazapin%') or
-([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%zispin%' ) or 
-([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%mirza%') or 
-([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%reboxet%' ) or 
-([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%reboxat%') or 
-([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%edronax%') or 
-([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%venlafaxine%' ) or 
-([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%effexor%') or 
-([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%efexor%') or 
-([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%agomelatin%' ) or 
-([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%valdoxan%' ) or 
-([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%duloxetin%' ) or 
-([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%cymbalta%' ) or 
-([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%yentreve%' ) or 
---([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%flupentixol%' ) or
---([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%fluanxol%' ) or
---([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%depixol%' ) or
-([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%tryptophan%' ) or
-([SQLCRIS_User].[dbo].[andreamedicationtable].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%optimax%' ) 
+([SQLCrisImport].[dbo].[medication_combined].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  AND drug like '%tca%') or 
+([SQLCrisImport].[dbo].[medication_combined].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%tricyclic%') or 
+([SQLCrisImport].[dbo].[medication_combined].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%amitriptyline%') or 
+([SQLCrisImport].[dbo].[medication_combined].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%vanatrip%') or 
+([SQLCrisImport].[dbo].[medication_combined].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%elavil%') or 
+([SQLCrisImport].[dbo].[medication_combined].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%endep%') or  --frOM drugs.COm 
+([SQLCrisImport].[dbo].[medication_combined].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and DRuG LIKE '%triptaf%')  or --COnTAInS AMItRIpTyLINe AnD PErPHEnAZInE 
+([SQLCrisImport].[dbo].[medication_combined].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%clomipramin%') or
+([SQLCrisImport].[dbo].[medication_combined].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%anafranil%') or
+([SQLCrisImport].[dbo].[medication_combined].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%dosulepin%') or 
+([SQLCrisImport].[dbo].[medication_combined].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%dothiepin%') or --PreViOuSLy KnoWN As DoTHIEPIN 
+([SQLCrisImport].[dbo].[medication_combined].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%prothiden%') or
+([SQLCrisImport].[dbo].[medication_combined].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and	drug like '%prothiaden%') or
+([SQLCrisImport].[dbo].[medication_combined].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%doxepin%') or
+([SQLCrisImport].[dbo].[medication_combined].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%sinepin%') or
+([SQLCrisImport].[dbo].[medication_combined].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%sineq%')  or --FroM drug.SCOm 
+([SQLCrisImport].[dbo].[medication_combined].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and	drug like '%xepin%') or --FRom DRUGS.CoM
+([SQLCrisImport].[dbo].[medication_combined].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%imipramine%') or  
+([SQLCrisImport].[dbo].[medication_combined].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%tofranil%') or -- FroM DrUGS.coM
+([SQLCrisImport].[dbo].[medication_combined].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%lofepramine%') or 
+([SQLCrisImport].[dbo].[medication_combined].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and	drug like '%lomont%') or -- FroM DrUGS.coM
+([SQLCrisImport].[dbo].[medication_combined].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%nortriptyli%') or
+([SQLCrisImport].[dbo].[medication_combined].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%pamelo%') or
+([SQLCrisImport].[dbo].[medication_combined].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%allegr%') or
+([SQLCrisImport].[dbo].[medication_combined].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%aventyl%') or
+([SQLCrisImport].[dbo].[medication_combined].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%trimipram%') or
+([SQLCrisImport].[dbo].[medication_combined].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%surmonti%') or
+([SQLCrisImport].[dbo].[medication_combined].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%mianserin%') or
+([SQLCrisImport].[dbo].[medication_combined].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%trazodone%') or
+([SQLCrisImport].[dbo].[medication_combined].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%molipaxin%') or
+([SQLCrisImport].[dbo].[medication_combined].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and	drug like '%phenelzine%') or
+([SQLCrisImport].[dbo].[medication_combined].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%phenylethylhydrazine%') or
+([SQLCrisImport].[dbo].[medication_combined].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%alazin%') or
+([SQLCrisImport].[dbo].[medication_combined].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%nardil%')  or
+([SQLCrisImport].[dbo].[medication_combined].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%isocarboxazid%')  or
+([SQLCrisImport].[dbo].[medication_combined].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%tranylcypromin%') or
+([SQLCrisImport].[dbo].[medication_combined].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%moclobemide%') or
+([SQLCrisImport].[dbo].[medication_combined].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%manerix%') or
+([SQLCrisImport].[dbo].[medication_combined].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and Drug like 'citalopram%') or
+([SQLCrisImport].[dbo].[medication_combined].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%cipramil%') or
+([SQLCrisImport].[dbo].[medication_combined].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%celexa%') or
+([SQLCrisImport].[dbo].[medication_combined].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%escitalopram%') or
+([SQLCrisImport].[dbo].[medication_combined].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%cipralex%') or
+([SQLCrisImport].[dbo].[medication_combined].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%lexapro%') or
+([SQLCrisImport].[dbo].[medication_combined].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%fluoxetine%') or
+([SQLCrisImport].[dbo].[medication_combined].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%prozac%') or
+([SQLCrisImport].[dbo].[medication_combined].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%sarafem%') or
+([SQLCrisImport].[dbo].[medication_combined].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%bellzac%') or --from drugs.com; used in Ireland
+([SQLCrisImport].[dbo].[medication_combined].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%oxactin%') or --from drugs.com; drug company: Discovery
+([SQLCrisImport].[dbo].[medication_combined].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%fluvoxamine%') or 
+([SQLCrisImport].[dbo].[medication_combined].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%faverin%') or 
+([SQLCrisImport].[dbo].[medication_combined].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like'%paroxetin%' ) or
+([SQLCrisImport].[dbo].[medication_combined].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%paxil%') or  --from drugs.com; not specified for UK use but used in US
+([SQLCrisImport].[dbo].[medication_combined].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%seroxat%' ) or
+([SQLCrisImport].[dbo].[medication_combined].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%sertra%' ) or 
+([SQLCrisImport].[dbo].[medication_combined].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%bellsert%') or  --from drugs.com; used in Ireland
+([SQLCrisImport].[dbo].[medication_combined].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%lustral%' ) or
+([SQLCrisImport].[dbo].[medication_combined].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%seretra%' ) or --from drugs.com; used in Ireland   
+([SQLCrisImport].[dbo].[medication_combined].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%zoloft%') or   -- from drugs.come; not specified for UK but used in US
+([SQLCrisImport].[dbo].[medication_combined].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%mirtazapin%') or
+([SQLCrisImport].[dbo].[medication_combined].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%zispin%' ) or 
+([SQLCrisImport].[dbo].[medication_combined].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%mirza%') or 
+([SQLCrisImport].[dbo].[medication_combined].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%reboxet%' ) or 
+([SQLCrisImport].[dbo].[medication_combined].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%reboxat%') or 
+([SQLCrisImport].[dbo].[medication_combined].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%edronax%') or 
+([SQLCrisImport].[dbo].[medication_combined].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%venlafaxine%' ) or 
+([SQLCrisImport].[dbo].[medication_combined].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%effexor%') or 
+([SQLCrisImport].[dbo].[medication_combined].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%efexor%') or 
+([SQLCrisImport].[dbo].[medication_combined].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%agomelatin%' ) or 
+([SQLCrisImport].[dbo].[medication_combined].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%valdoxan%' ) or 
+([SQLCrisImport].[dbo].[medication_combined].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%duloxetin%' ) or 
+([SQLCrisImport].[dbo].[medication_combined].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%cymbalta%' ) or 
+([SQLCrisImport].[dbo].[medication_combined].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%yentreve%' ) or 
+--([SQLCrisImport].[dbo].[medication_combined].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%flupentixol%' ) or
+--([SQLCrisImport].[dbo].[medication_combined].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%fluanxol%' ) or
+--([SQLCrisImport].[dbo].[medication_combined].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%depixol%' ) or
+([SQLCrisImport].[dbo].[medication_combined].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%tryptophan%' ) or
+([SQLCrisImport].[dbo].[medication_combined].start_date BETWEEN '01-MAR-2014' and '28-FEB-2015'  and drug like '%optimax%' ) 
 
 ) as PastADIndication
 where PastADIndication.ranking = '1'
