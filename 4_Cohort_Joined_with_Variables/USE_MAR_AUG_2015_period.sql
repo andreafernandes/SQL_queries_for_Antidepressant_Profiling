@@ -2961,6 +2961,7 @@ on
 Table1.a = SpellTable2.BrcId  
 
 -------------------------------------------------------------------------------
+-- selecting the closest honos to 1st of march 2015. 
 
 left join
 
