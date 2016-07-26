@@ -84,13 +84,14 @@ select
    ethnicitycleaned
    ,cleaneddateofbirth
    ,Gender_ID
-   ,SpellTable.Spell_Number
    ,Marital_Status_ID
    ----,LatestNumberOfSpells
    ,Accepted_Date
    ,Discharge_Date
+   ,SpellTable.SpellNumber
    ,Accepted_Date2
    ,Discharge_Date2
+   ,SpellNumber2
    ,Agitated_Behaviour_Score_ID,
 	Self_Injury_Score_ID,
 	Problem_Drinking_Drugs_Score_ID,
@@ -2868,23 +2869,27 @@ select *
 from 
 
 (
-select Spell_Number,
-brcid,
-Accepted_Date,
-Discharge_Date,
+select Spell_Number as SpellNumber,
+brcid ,
+Accepted_Date as Accepted_Date,
+Discharge_Date as Discharge_Date,
 RANK () OVER (PARTITION BY TableTesting.brcid 
-				ORDER BY (ABS(DATEDIFF(DD,'01-MAR-2015',TableTesting.Accepted_Date))) ASC, TableTesting.CN_Doc_ID) as Ranking
+				ORDER BY (ABS(DATEDIFF(DD,
+							  '01-MAR-2015',
+							  TableTesting.Accepted_Date))) ASC, cn_doc_id ) as Ranking
 
 from
 
 (
 select 
-SQLCRIS.DBO.Event.brcid, 
-SQLCRIS.DBO.Event.CN_Doc_ID,
-SQLCRIS.DBO.Event.Start_Date, 
+distinct SQLCRIS.DBO.Event.brcid,
+--, 
+--SQLCRIS.DBO.Event.CN_Doc_ID,
+--SQLCRIS.DBO.Event.Start_Date, 
 Referral.Spell_Number, 
 Referral.Accepted_Date,
-Referral.Discharge_Date
+Referral.Discharge_Date,
+Referral.CN_Doc_ID
 from SQLCRIS.DBO.Event
 
 left join
@@ -2898,7 +2903,7 @@ where   (EVENT.Start_Date BETWEEN '01-MAR-2015' and '31-AUG-2015')
 		(eVENT.Event_Type_Of_Contact_ID LIKE '%face%')
 
 )TableTesting
-) TableTesting2
+) TableTesting2_AnotherReferral
 where Ranking = 1
 ) SpellTable
 
@@ -2926,19 +2931,20 @@ Discharge_Date as Discharge_Date2,
 RANK () OVER (PARTITION BY TableTesting.brcid 
 				ORDER BY (ABS(DATEDIFF(DD,
 							  '01-MAR-2015',
-							  TableTesting.Accepted_Date))) ASC, 
-              TableTesting.CN_Doc_ID) as Ranking
+							  TableTesting.Accepted_Date))) ASC, cn_doc_id) as Ranking
 
 from
 
 (
 select 
-SQLCRIS.DBO.Event.brcid, 
-SQLCRIS.DBO.Event.CN_Doc_ID,
-SQLCRIS.DBO.Event.Start_Date, 
+distinct SQLCRIS.DBO.Event.brcid,
+--, 
+--SQLCRIS.DBO.Event.CN_Doc_ID,
+--SQLCRIS.DBO.Event.Start_Date, 
 Referral.Spell_Number, 
 Referral.Accepted_Date,
-Referral.Discharge_Date
+Referral.Discharge_Date,
+Referral.CN_Doc_ID
 from SQLCRIS.DBO.Event
 
 left join
