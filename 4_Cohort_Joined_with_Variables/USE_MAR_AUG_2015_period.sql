@@ -1,13 +1,4 @@
-select * into SQLCRIS_USER.DBO.AFERNANDES_AD_Profile_cohort_MAR15_AUG15_corrected
-
---v3 is without spell data to avoid duplicate row generation. my cohort has 3991 people and there 
--- are duplicate rows in the Referall data. they are exactly the same but with different cndocids. 
-
---select * into SQLCRIS_USER.DBO.AFERNANDES_Antidepressant_Profile_cohort_July2016_corrected_6month_V2
--- v2 is with spell data and hence my cohort has duplicate rows. So instead of 3991 people I have 4224
--- patients. 
-
--- I've left all coding this in code for future. But I'm excluding any data on 
+select * into SQLCRIS_USER.DBO.AFERNANDES_AD_Profile_cohort_MAR15_AUG15_corrected_v2
 
 
 from 
@@ -22,7 +13,7 @@ from
 (
 select 
 	diagnosis_date,
-	primary_diagnosis,
+	FcodeDiagnosis,
 	diagnosis_id,
 	a,
 	PatientonAD,
@@ -282,19 +273,24 @@ where
 
 on Table1.a = TableInpatient.InpatientBrcid
 -----------------------------------------------------------------------------------
---joining closest F code for dep to assign severity
+-- joining closest F code for dep to assign severity, ask Hitesh about this form. 
+-- asked Hitesh, he suggested not to use Diagnosis_Cleaned (which is AT's table)
+-- HS suggested using diagnosis_combined table which is possibly better to use. So 
+-- I've amended the code to reflect this. 
+-- The below code is corrected. 
+
 left join
 (
 select  brcid as FcodeBrcid,
-		Diag,
-		ClosestFcodeToSnapshotForMostRecentSeverity
+		primary_diagnosis as FcodeDiagnosis,
+		ClosestFcodeToSnapshotForMostRecentSeverity as Diag
 		
 from 
 
 (
 select  
 		BrcId,
-		Diag,
+		primary_diagnosis,
 		Diagnosis_Date,
 		ROW_NUMBER() OVER 
 		(PARTITION BY  BRCID 
@@ -302,14 +298,14 @@ select
 		) 
 		AS ClosestFcodeToSnapshotForMostRecentSeverity
 		
-from SQLCRIS.dbo.Diagnosis_Cleaned
+from SQLCrisImport.dbo.diagnosis_combined
 		
-where
+where source_table = 'diagnosis' and 
 		Diagnosis_Date < '31-AUG-2015' and
-		(Diag like '%F34.1%' OR
-		 Diag like '%F32%' OR
-		 Diag like '%F33%' OR
-		 Diag like '%F41.2%'
+		(primary_diagnosis like '%F34.1%' OR
+		 primary_diagnosis like '%F32%' OR
+		 primary_diagnosis like '%F33%' OR
+		 primary_diagnosis like '%F41.2%'
 		 )
 		
 )Table1
@@ -333,6 +329,7 @@ ON Table1.a = EPR_Form.BrcId
 -- In the case of hallucinations, DO NOT add the criteria: mlObservation1 = 'positive' because it 
 -- does not bring back any patients. 
 -- I did a few checks of the NULL and positive examples and both signify positive...
+-- JJ has updated hallucination table and now I'm bringing back refreshed data. 
 
 left join
 (
@@ -464,6 +461,7 @@ group by c1
 -- there are only positive and negative mentions of poor motivation instances. 
 -- in this case ok to add the criteria mlObservation1 = 'positive'
 
+
 left join
 (
 select  distinct(d)
@@ -587,7 +585,7 @@ group by c1
  Table1.a = PoorMotivationPastCount.c1
 -------------------------------------------------------------------------------------------------
 -- current Poor Affect data
--- for flat affect, the criteria  of positive and NULL is used to extract positive mentions
+-- for flat affect, the criteria  of positive or NULL is used to extract positive mentions
 -- of flat affect
 
 left join
@@ -1091,21 +1089,24 @@ group by c1
 --current SuicideAttempt data
 -- THERE ARE negative, positive and unknown flags
 -- extraction code is fine as it is. 
+-- The suicide attempt app needed improvement on false positive levels. I've worked 
+-- with JJ to minimise this. A new table was generate with the results and this is what is 
+-- used here. 
 
 left join
 (
 select  distinct(n)
 from 
 (
-SELECT [GateDB_Cris].[dbo].[gate_hunter_suicide_306].BrcId as n, 
-	   [GateDB_Cris].[dbo].[gate_hunter_suicide_306].CN_Doc_ID as documentID,
+SELECT [SQLCRIS_User].[dbo].[Afernandes_SuicideAttempt_Post_Processing].BrcId as n, 
+	   [SQLCRIS_User].[dbo].[Afernandes_SuicideAttempt_Post_Processing].CN_Doc_ID as documentID,
 	   match,
 	   CONVERT(datetime,[GateDB_Cris].[dbo].[gate].[Date],103) as calendardate,
 	   mlObservation1
-  FROM [GateDB_Cris].[dbo].[gate_hunter_suicide_306]
+  FROM [SQLCRIS_User].[dbo].[Afernandes_SuicideAttempt_Post_Processing]
 left join
 [GateDB_Cris].[dbo].[gate]
- on [GateDB_Cris].[dbo].[gate_hunter_suicide_306].CN_Doc_ID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
+ on [SQLCRIS_User].[dbo].[Afernandes_SuicideAttempt_Post_Processing].CN_Doc_ID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
  )Table1 
  where calendardate between '01-MAR-2015' and '31-AUG-2015'  and mlObservation1 = 'positive'
  )SuicideARecent
@@ -1118,15 +1119,15 @@ left join
 select distinct(o)
 from 
 (
-SELECT [GateDB_Cris].[dbo].[gate_hunter_suicide_306].BrcId as o, 
-	   [GateDB_Cris].[dbo].[gate_hunter_suicide_306].CN_Doc_ID as documentID,
+SELECT [SQLCRIS_User].[dbo].[Afernandes_SuicideAttempt_Post_Processing].BrcId as o, 
+	   [SQLCRIS_User].[dbo].[Afernandes_SuicideAttempt_Post_Processing].CN_Doc_ID as documentID,
 	  match,
 	   CONVERT(datetime,[GateDB_Cris].[dbo].[gate].[Date],103) as calendardate,
 	   mlObservation1
-  FROM [GateDB_Cris].[dbo].[gate_hunter_suicide_306]
+  FROM [SQLCRIS_User].[dbo].[Afernandes_SuicideAttempt_Post_Processing]
 left join
 [GateDB_Cris].[dbo].[gate]
- on [GateDB_Cris].[dbo].[gate_hunter_suicide_306].CN_Doc_ID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
+ on [SQLCRIS_User].[dbo].[Afernandes_SuicideAttempt_Post_Processing].CN_Doc_ID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
  )Table1 
  where calendardate between '01-MAR-2014' and '28-FEB-2015' and mlObservation1 = 'positive'
  )SuicideAPast
@@ -1153,12 +1154,12 @@ from
 									from 
 															(
 															select BrcId,
-															keyObservation1, 
+															--keyObservation1, 
 															match, 
 															cn_doc_id as documentID, 
 															src_table,
 															src_col 
-															from [GateDB_Cris].[dbo].[gate_hunter_suicide_306]
+															from [SQLCRIS_User].[dbo].[Afernandes_SuicideAttempt_Post_Processing]
 															where mlObservation1 = 'positive'
 															)Table1											
 									inner join
@@ -1193,12 +1194,12 @@ from
 									from 
 															(
 															select BrcId,
-															keyObservation1, 
+															--keyObservation1, 
 															match, 
 															cn_doc_id as documentID, 
 															src_table,
 															src_col 
-															from [GateDB_Cris].[dbo].[gate_hunter_suicide_306]
+															from [SQLCRIS_User].[dbo].[Afernandes_SuicideAttempt_Post_Processing]
 															where mlObservation1 = 'positive'
 															)Table1											
 									inner join
@@ -3040,7 +3041,8 @@ left join
 									[SQLCrisImport].[dbo].[tbl_gate_hunter_compliance]
 									) Table1
 				where 
-				Table1.AdherenceMentionDocDate between '01-MAR-2014' and '28-FEB-2015'
+				Table1.AdherenceMentionDocDate between '01-MAR-2014' and '28-FEB-2015' 
+
 				) Table2
 where mlObservation1 like 'positive'
 group by BrcId
@@ -3534,22 +3536,23 @@ on Table1.a = PastAD.PastADBrcid
 
 left join 
 
--- most recent address to 1st of March 2015
-(
-select DISTINCT(LSOA11_1) as UNIQUELSOA, imd_score
-from
-(
-select LSOA11 AS LSOA11_1, 
-	   [SQLCrisImport].[dbo].[address_ons_2010_imd].[Index of Multiple Deprivation Score] as imd_score,
-	   RANK () OVER (PARTITION BY BRCID ORDER BY (ABS(DATEDIFF(DD,'01-MAR-2015',Start_Date))) ASC, cn_doc_id ) as AddressClosesttoSnapshot
-from [SQLCrisImport].[dbo].[address_ons_2010_imd]
-)TableAddress
-where AddressClosesttoSnapshot = '1'
-)TableAddressClosestToSnapshot
+-- most closest address recorded to 1st of March 2015
+		(
+					select DISTINCT(LSOA11_1) as UNIQUELSOA, 
+									imd_score
+					from
+								(
+								select LSOA11 AS LSOA11_1, 
+									   [SQLCrisImport].[dbo].[address_ons_2010_imd].[Index of Multiple Deprivation Score] as imd_score,
+									   RANK () OVER (PARTITION BY BRCID ORDER BY (ABS(DATEDIFF(DD,
+																							   '01-MAR-2015',Start_Date))) ASC, 
+																							   cn_doc_id ) as AddressClosesttoSnapshot
+								from [SQLCrisImport].[dbo].[address_ons_2010_imd]
+								)TableAddress
+					where AddressClosesttoSnapshot = '1'
+		)TableAddressClosestToSnapshot
 
 on TableEntireCohort.AddressFormLSOA = TableAddressClosestToSnapshot.UNIQUELSOA
-
-
 
 --exemplar Left Join of IMD SCORES AND LSOA-------------------------------------------------------------------------------------
 --LEFT JOIN 
@@ -3602,3 +3605,49 @@ on TableEntireCohort.AddressFormLSOA = TableAddressClosestToSnapshot.UNIQUELSOA
 --on Table1.BRCID = TestTable.b
 
 --where calendardate between '01-MAR-2014' and '01-MAR-2015' and mlObservation1 = 'positive'
+
+
+
+
+------------
+
+-- Apps which have not been run across CRIS (I've asked Jyoti to run but machines not available): hallucinations , 
+--																								  delusions and agitation
+
+--Jyoti, Jyoti <Jyoti.Jyoti@slam.nhs.uk>
+-- |
+--Thu 7/21
+--I will run them whenever high powered machines are available.
+ 
+--Bw
+--FA
+--Fernandes, Andrea
+-- |
+--Thu 7/21
+--Hi Jyoti, 
+
+--That's fine. I'll start my analysis anyway and add them later when they are ready. 
+
+--bw
+--Andrea
+--JJ
+--Jyoti, Jyoti <Jyoti.Jyoti@slam.nhs.uk>
+-- |
+--Thu 7/21
+--I will run them but how urgent they are, you might need to wait upto 2 weeks. As currently both of the powered machines are busy.
+ 
+--Bw
+--FA
+--Fernandes, Andrea
+-- |
+--Thu 7/21
+--Hi Jyoti, 
+
+--Thanks for your help yesterday on figuring out which apps were not run over CRIS. 
+
+--I wondered if it would be possible to run the app for hallucinations , delusions and agitation across the entirety of CRIS. 
+
+--It's not absolutely urgent, but I think Rob will expect me to include those in my analysis.  Hopefully they won't take too long or take up too much of your time! 
+
+--bw
+--Andrea
