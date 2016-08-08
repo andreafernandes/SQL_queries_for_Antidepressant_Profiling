@@ -1,5 +1,5 @@
 select * into SQLCRIS_USER.DBO.AFERNANDES_AD_Profile_cohort_MAR15_AUG15_corrected_v2
-
+-- (3991 row(s) affected)
 
 from 
 
