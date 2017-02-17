@@ -1,5 +1,9 @@
-select * into SQLCRIS_USER.DBO.AFERNANDES_AD_Profile_cohort_MAR15_AUG15_corrected_v2
--- (3991 row(s) affected)
+-- select * from SQLCRIS_USER.DBO.AFERNANDES_AD_Profile_cohort_MAR15_AUG15_corrected_v3
+
+
+
+select * into SQLCRIS_USER.DBO.AFERNANDES_AD_Profile_cohort_MAR15_AUG15_corrected_vFeb2017_III
+-- 
 
 from 
 
@@ -12,10 +16,11 @@ from
 
 (
 select 
-	diagnosis_date,
-	FcodeDiagnosis,
-	diagnosis_id,
 	a,
+	diagnosis_date,
+	FcodeDiagnosis, 
+	--diagnosis_id,
+	
 	PatientonAD,
 	LithiumFlag, -- from the medication table I generate
 	TCA_AmitriptylineFlag,
@@ -77,12 +82,12 @@ select
    ,Gender_ID
    ,Marital_Status_ID
    ----,LatestNumberOfSpells
-   ,Accepted_Date
-   ,Discharge_Date
-   ,SpellTable.SpellNumber
-   ,Accepted_Date2
-   ,Discharge_Date2
-   ,SpellNumber2
+   ,Accepted_Date			-- referral data to calculate length of spell up until point of observation start
+   ,Discharge_Date			-- "
+   ,SpellTable.SpellNumber	-- "
+   ,Accepted_Date2			-- "
+   ,Discharge_Date2			-- "
+   ,SpellNumber2			-- "
    ,Agitated_Behaviour_Score_ID,
 	Self_Injury_Score_ID,
 	Problem_Drinking_Drugs_Score_ID,
@@ -116,7 +121,7 @@ select
 	,PastADdate
 	,PastAD
 	,TableInpatient.InpatientBrcid as BeenInpatientin12months,
-	FDiagnosisClosestFcodeToSnapshotForMostRecentSeverity.Diag,
+	FDiagnosisClosestFcodeToSnapshotForMostRecentSeverity.Diag, -- to use as proxy indicator of severity
 	--Table2.LSOA,
 	Table2.Address_Start,
 	Table2.AddressFormLSOA
@@ -128,10 +133,10 @@ select
 	,PoorMotivationPastCount.poormotivationcountpast
 	,PoorMotivationRecent.d as PoorMotivationRecent
 	,PoorMotivationCurrentCount.poormotivationcountcurrent
-	,FlatAffectPast.g as PoorAffectPast
-	,FlatAffectCurrentCount.flataffectcountcurrent
-	,FlatAffectRecent.f as PoorAffectRecent
-	,FlatAffectPastCount.flataffectcountpast
+	--,FlatAffectPast.g as FlatAffectPast
+	--,FlatAffectPastCount.flataffectcountpast
+	--,FlatAffectRecent.f as FlatAffectRecent
+	--,FlatAffectCurrentCount.flataffectcountcurrent
 	,AnhedoniaPast.i as AnhedoniaPast
 	,AnhedoniaPastCount.anhedoniacountpast
 	,AnhedoniaRecent.h as AnhedoniaRecent
@@ -160,10 +165,10 @@ select
 	,InsomniaPastCount.insomniacountpast
 	,InsomniaRecent.t as InsomniaRecent
 	,InsomniaCurrentCount.insomniacountcurrent
-	,AgressionPast.w as AggressionPast
-	,AggressionPastCount.aggressioncountpast
-	,AgressionRecent.v as AggressionRecent
-	,AggressionCurrentCount.aggressioncountcurrent
+	--,AgressionPast.w as AggressionPast
+	--,AggressionPastCount.aggressioncountpast
+	--,AgressionRecent.v as AggressionRecent
+	--,AggressionCurrentCount.aggressioncountcurrent
 	,AgitationPast.y as AgitationPast
 	,AgitationPastCount.agitationcountpast
 	,AgitationRecent.x as AgitationRecent
@@ -202,6 +207,13 @@ select
 	,LowMoodCurrentCount.LowMoodhcountcurrent
 	,BenzoPastSnapshot.BenzoPastBrcid
 	,BenzoSnapshot.BenzoBrcid
+	,SuicideIdeationPast.o as SuicideIdeationPast
+	,suicideideationcountpast
+	,DistinctIAPT_Table.BrcId  as IAPTBrcid
+	--,FHxSPast.c as FHxSPastBrcid  -- do not use until we get an all clear
+	--,FHxSPast_fullset.c as FHxSPast_FullSet
+	,suicideideationcountFUTURE
+	,SuicideIdeationFutureSixMonths.o11 as SuicideIdeationFuture
 
 	
    --COUNT(a), primary_diagnosis
@@ -209,6 +221,7 @@ select
 from 
 
 --(
+------------------------------------MAIN COHORT OF INTEREST-----------------------------------
 ----------------------------------------------------------------------------------------------
 --This table defines individuals with f2f activity within obs period, 
 --AND depress* diag before start of obs period & 
@@ -224,7 +237,7 @@ on SQLCRIS_User.dbo.AFernandes_DepDiag_bef_MAR15_AUG15.a = SQLCris_User.dbo.Afer
 ) 
 Table1   
 -----------------------------------------------------------------------------------------------
-----this joins ADs and Demographics to our table. 
+----this joins antidepressant data to our table. 
 
 left join 
 
@@ -232,7 +245,14 @@ SQLCRIS_User.dbo.Afernandes_Antidepressant_MAR15_AUG15_with_dates -- this table 
 
 on Table1.a = SQLCRIS_User.dbo.Afernandes_Antidepressant_MAR15_AUG15_with_dates.PatientonAD
 -------------------------------------------------------------------------------------------------
---joining LSOA code and address start date closest to 1st of maruary 2015
+-------------------------------------MAIN COHORT OF INTEREST-------------------------------------
+
+-- Below are sub queries written to join to the main table (i.e. the main cohort of interest)
+
+-------------------------------------------------------------------------------------------------
+
+-- Joining LSOA code and address start date closest to 1st of march 2015 to link deprivation data to. 
+
 left join
 
 (
@@ -240,15 +260,16 @@ select *
 from 
 			(
 			select BrcId as AddressBrcid
-				 , Address_Start
-				 , LSOA as AddressFormLSOA
+				 , Start_Date as Address_Start
+				 , LSOA11 as AddressFormLSOA
 				 ,
 					ROW_NUMBER() OVER 
 					(PARTITION BY  BRCID 
-						ORDER BY   ABS(DATEDIFF(DD,Address_Start,'01-MAR-2015')) asc
+						ORDER BY   ABS(DATEDIFF(DD,Start_Date,'01-MAR-2015')) asc
 					) 
 					AS ClosestAddressToSnapshot
-			from SQLCRIS.DBO.Address_Cleaned
+			from --SQLCRIS.dbo.Address_Cleaned
+				 SQLCRIS.dbo.Address
 			)Table1
 where ClosestAddressToSnapshot = '1'
 ) Table2
@@ -256,7 +277,9 @@ where ClosestAddressToSnapshot = '1'
 on Table1.a = Table2.AddressBrcid
 
 ------------------------------------------------------------------------------------------------
---joining inpatient status in the past year
+
+-- Joining inpatient status in the past year
+
 left Join
 
 (
@@ -272,8 +295,10 @@ where
 ) TableInpatient
 
 on Table1.a = TableInpatient.InpatientBrcid
+
 -----------------------------------------------------------------------------------
--- joining closest F code for dep to assign severity, ask Hitesh about this form. 
+
+-- Joining closest F code for dep to assign severity, ask Hitesh about this form. 
 -- asked Hitesh, he suggested not to use Diagnosis_Cleaned (which is AT's table)
 -- HS suggested using diagnosis_combined table which is possibly better to use. So 
 -- I've amended the code to reflect this. 
@@ -317,64 +342,96 @@ ClosestFcodeToSnapshotForMostRecentSeverity = 1
 
 on Table1.a = FDiagnosisClosestFcodeToSnapshotForMostRecentSeverity.FcodeBrcid
 --------------------------------------------------------------------------------------------------
+
+-- Hitesh pulled out Patients who were in touch with IAPT services a year 
+-- before observation period. 
+
+left join
+
+(select distinct([SQLCRIS_User].[dbo].[tbl_af_ia].brcid)
+
+from [SQLCRIS_User].[dbo].[tbl_af_ia])DistinctIAPT_Table
+
+
+ON Table1.a = DistinctIAPT_Table.BrcId 
+
+-------------------------------------------------------------------------------------------------
+
+-- Joining demographics data to our cohort. 
+
 left join
 
 SQLCRIS.DBO.EPR_Form
 
 ON Table1.a = EPR_Form.BrcId 
+
 -------------------------------------------------------------------------------------------------
--- current hallucination data, JJ advised on using mlObservation1 = 'positive' to get positive 
+
+-- JJ advised on using mlObservation1 = 'positive' to get positive 
 -- mentions of hallucinations. 
 -- This does not apply to all the symptoms. 
 -- In the case of hallucinations, DO NOT add the criteria: mlObservation1 = 'positive' because it 
 -- does not bring back any patients. 
--- I did a few checks of the NULL and positive examples and both signify positive...
+-- I did a few checks of the NULL/negative and positive examples and both signify positive...
 -- JJ has updated hallucination table and now I'm bringing back refreshed data. 
+------------------outdated note: please ignore---------------------------------------------------
 
-left join
+--- bringing back non negative instances of hallucinations only---
+
+left join --Experience of hallucinations during observation period
 (
 select  distinct(b)
 from 
 (
-SELECT [GateDB_Cris].[dbo].[gate_hunter_hallucination_306].BrcId as b, 
-	   [GateDB_Cris].[dbo].[gate_hunter_hallucination_306].CN_Doc_ID as documentID,
+SELECT [GateDB_Cris].dbo.gate_hunter_hallucination_suicide_306.BrcId as b, 
+	   [GateDB_Cris].dbo.gate_hunter_hallucination_suicide_306.CN_Doc_ID as documentID,
 	   match,
 	   CONVERT(datetime,[GateDB_Cris].[dbo].[gate].[Date],103) as calendardate,
-	   mlObservation1
-  FROM [GateDB_Cris].[dbo].[gate_hunter_hallucination_306]
+	   mlObservation1,
+	   keyObservation1
+  FROM [GateDB_Cris].dbo.gate_hunter_hallucination_suicide_306
 left join
 [GateDB_Cris].[dbo].[gate]
- on [GateDB_Cris].[dbo].[gate_hunter_hallucination_306].CN_Doc_ID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
+ on [GateDB_Cris].dbo.gate_hunter_hallucination_suicide_306.CN_Doc_ID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
  )Table1 
- where calendardate between '01-MAR-2015' and '31-AUG-2015' --and mlObservation1 = 'positive'
+ where  calendardate between '01-MAR-2015' and '31-AUG-2015' and 
+		mlObservation1 != 'negative' and
+		keyObservation1 is NULL
+		
  )HallucinationsRecent
  on 
  Table1.a = HallucinationsRecent.b
  ----------------------------------------------------------------------
  --Past 12 months hallucinations
-left join
+ 
+left join --Experience of hallucinations 12 months before observation period
 (
 select    distinct(c)
 from 
 (
-SELECT [GateDB_Cris].[dbo].[gate_hunter_hallucination_306].BrcId as c, 
-	   [GateDB_Cris].[dbo].[gate_hunter_hallucination_306].CN_Doc_ID as documentID,
-	  match,
+SELECT [GateDB_Cris].dbo.gate_hunter_hallucination_suicide_306.BrcId as c, 
+	   [GateDB_Cris].dbo.gate_hunter_hallucination_suicide_306.CN_Doc_ID as documentID,
+	   match,
 	   CONVERT(datetime,[GateDB_Cris].[dbo].[gate].[Date],103) as calendardate,
-	   mlObservation1
-  FROM [GateDB_Cris].[dbo].[gate_hunter_hallucination_306]
+	   mlObservation1,
+	   keyObservation1
+  FROM [GateDB_Cris].dbo.gate_hunter_hallucination_suicide_306
 left join
 [GateDB_Cris].[dbo].[gate]
- on [GateDB_Cris].[dbo].[gate_hunter_hallucination_306].CN_Doc_ID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
+ on [GateDB_Cris].dbo.gate_hunter_hallucination_suicide_306.CN_Doc_ID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
  )Table1 
- where calendardate between '01-MAR-2014' and '28-FEB-2015' --and mlObservation1 = 'positive'
+ where  calendardate between '01-MAR-2014' and '28-FEB-2015' and 
+		mlObservation1 != 'negative' and
+		keyObservation1 IS NULL
  )HallucinationsPast
  on 
  Table1.a = HallucinationsPast.c
  
  
  -----------------------------------------------------------------------------------------------
-  --Count of Recent Hallucination
+
+ --Count of Hallucination mentions during observation period
+  
 left join
 (
 select c1,
@@ -399,8 +456,9 @@ from
 															cn_doc_id as documentID, 
 															src_table,
 															src_col 
-															from [GateDB_Cris].[dbo].[gate_hunter_hallucination_306]
-															--WHERE mlObservation1 = 'positive'
+															from [GateDB_Cris].dbo.gate_hunter_hallucination_suicide_306
+															WHERE mlObservation1 != 'negative' and
+																  keyObservation1 IS NULL
 															)Table1											
 									inner join
 											  [GateDB_Cris].[dbo].[gate] 
@@ -417,7 +475,8 @@ group by c1
  Table1.a = HallucinationsCurrentCount.c1
 		
 -------------------------------------------------------------------------------------------------
-  --Count of Past Hallucination
+ --Count of Hallucination mentions 12 months before observation period
+ 
 left join
 (
 select c1,
@@ -441,8 +500,9 @@ from
 															cn_doc_id as documentID, 
 															src_table,
 															src_col 
-															from [GateDB_Cris].[dbo].[gate_hunter_hallucination_306]
-															--WHERE mlObservation1 = 'positive'
+															from [GateDB_Cris].dbo.gate_hunter_hallucination_suicide_306
+															WHERE mlObservation1 != 'negative' and
+																  keyObservation1 IS NULL
 															)Table1											
 									inner join
 											  [GateDB_Cris].[dbo].[gate] 
@@ -457,50 +517,116 @@ group by c1
  Table1.a = HallucinationsPastCount.c1
 		
 -------------------------------------------------------------------------------------------------
--- current Poor Motivation data
--- there are only positive and negative mentions of poor motivation instances. 
--- in this case ok to add the criteria mlObservation1 = 'positive'
+ --Past 12 months family history of suicide
+ 
+--left join --occurrence of family history of suicide before observation period
+--(
+--select    distinct(c)
+--from 
+--(
+--SELECT [GateDB_Cris].[dbo].[gate_hunter_fam_hist_suicide_subset_306].BrcId as c, 
+--	   [GateDB_Cris].[dbo].[gate_hunter_fam_hist_suicide_subset_306].CN_Doc_ID as documentID,
+--	  match,
+--	   CONVERT(datetime,[GateDB_Cris].[dbo].[gate].[Date],103) as calendardate,
+--	   mlObservation1
+--  FROM [GateDB_Cris].[dbo].[gate_hunter_fam_hist_suicide_subset_306]
+--left join
+--[GateDB_Cris].[dbo].[gate]
+-- on [GateDB_Cris].[dbo].[gate_hunter_fam_hist_suicide_subset_306].CN_Doc_ID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
+-- )Table1  
+-- where calendardate between '01-MAR-2014' and '28-FEB-2015' and mlObservation1 = 'positive'
+-- )FHxSPast
+-- on 
+-- Table1.a = FHxSPast.c
+ 
+-- --------------------------------------------------------------------------
+-- --Past 12 months family history of suicide
+ 
+--left join --occurrence of family history of suicide before observation period
+--(
+--select    distinct(c)
+--from 
+--(
+--SELECT [GateDB_Cris].dbo.gate_hunter_fam_hist_suicide_306.BrcId as c, 
+--	   [GateDB_Cris].dbo.gate_hunter_fam_hist_suicide_306.CN_Doc_ID as documentID,
+--	  match,
+--	   CONVERT(datetime,[GateDB_Cris].[dbo].[gate].[Date],103) as calendardate,
+--	   mlObservation1
+--  FROM [GateDB_Cris].dbo.gate_hunter_fam_hist_suicide_306
+--left join
+--[GateDB_Cris].[dbo].[gate]
+-- on [GateDB_Cris].dbo.gate_hunter_fam_hist_suicide_306.CN_Doc_ID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
+-- )Table1  
+-- where calendardate between '01-MAR-2014' and '28-FEB-2015' and mlObservation1 = 'positive'
+-- )FHxSPast_fullset
+-- on 
+-- Table1.a = FHxSPast_fullset.c
+ 
+ 
+ -----------------------------------------------------------------------------------------------
+
+-- There are only positive and negative mentions of poor motivation instances. 
+-- In this case ok to add the criteria mlObservation1 = 'positive'
 
 
-left join
+left join -- current Poor Motivation data
 (
 select  distinct(d)
 from 
 (
-SELECT [GateDB_Cris].[dbo].[gate_hunter_poor_mot_306].BrcId as d, 
-	   [GateDB_Cris].[dbo].[gate_hunter_poor_mot_306].CN_Doc_ID as documentID,
+SELECT [GateDB_Cris].dbo.gate_hunter_poor_mot_suicide_306.BrcId as d, 
+	   [GateDB_Cris].dbo.gate_hunter_poor_mot_suicide_306.CN_Doc_ID as documentID,
 	   match,
 	   CONVERT(datetime,[GateDB_Cris].[dbo].[gate].[Date],103) as calendardate,
-	   mlObservation1
-  FROM [GateDB_Cris].[dbo].[gate_hunter_poor_mot_306]
+	   mlObservation1,
+	   keyObservation1
+FROM [GateDB_Cris].dbo.gate_hunter_poor_mot_suicide_306
+
 left join
+
 [GateDB_Cris].[dbo].[gate]
- on [GateDB_Cris].[dbo].[gate_hunter_poor_mot_306].CN_Doc_ID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
- )Table1 
- where calendardate between '01-MAR-2015' and '31-AUG-2015' and mlObservation1 = 'positive'
+
+on 
+
+[GateDB_Cris].dbo.gate_hunter_poor_mot_suicide_306.CN_Doc_ID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
+
+)Table1 
+ where  calendardate between '01-MAR-2015' and '31-AUG-2015' and 
+		mlObservation1 = 'positive' and
+		keyObservation1 is null 
  )PoorMotivationRecent
  on 
  Table1.a = PoorMotivationRecent.d
  ----------------------------------------------------------------------
  --Past 12 months poor motivation
 left join
-(
-select    distinct(e)
-from 
-(
-SELECT [GateDB_Cris].[dbo].[gate_hunter_poor_mot_306].BrcId as e, 
-	   [GateDB_Cris].[dbo].[gate_hunter_poor_mot_306].CN_Doc_ID as documentID,
-	  match,
-	   CONVERT(datetime,[GateDB_Cris].[dbo].[gate].[Date],103) as calendardate,
-	   mlObservation1
-  FROM [GateDB_Cris].[dbo].[gate_hunter_poor_mot_306]
-left join
-[GateDB_Cris].[dbo].[gate]
- on [GateDB_Cris].[dbo].[gate_hunter_poor_mot_306].CN_Doc_ID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
- )Table1 
- where calendardate between '01-MAR-2014' and '28-FEB-2015' and mlObservation1 = 'positive'
- )PoorMotivationPast
+	(
+	select    distinct(e)
+	from 
+					(
+					SELECT [GateDB_Cris].DBO.gate_hunter_poor_mot_suicide_306.BrcId as e, 
+					   [GateDB_Cris].DBO.gate_hunter_poor_mot_suicide_306.CN_Doc_ID as documentID,
+					   match,
+					   CONVERT(datetime,[GateDB_Cris].[dbo].[gate].[Date],103)		as calendardate,
+					   mlObservation1,
+					   keyObservation1
+					FROM [GateDB_Cris].DBO.gate_hunter_poor_mot_suicide_306
+
+					left join
+					
+					[GateDB_Cris].[dbo].[gate]
+
+					on [GateDB_Cris].DBO.gate_hunter_poor_mot_suicide_306.CN_Doc_ID = 
+					   [GateDB_Cris].[dbo].[gate].CN_Doc_ID
+
+					)Table1 
+	 where calendardate between '01-MAR-2014' and '28-FEB-2015' and 
+		   mlObservation1 = 'positive' AND 
+		   keyobservation1 is null
+	 )PoorMotivationPast
+ 
  on 
+ 
  Table1.a = PoorMotivationPast.e
  -----------------------------------------------------------------------------------------------
   --Count of Recent Motivation
@@ -529,8 +655,9 @@ from
 															src_table,
 															src_col, 
 															mlObservation1
-															from [GateDB_Cris].[dbo].[gate_hunter_poor_mot_306]
-															where mlObservation1 = 'positive'
+															from [GateDB_Cris].dbo.gate_hunter_poor_mot_suicide_306
+															where mlObservation1 = 'positive' and 
+																  keyObservation1 IS NULL
 															)Table1											
 									inner join
 											  [GateDB_Cris].[dbo].[gate] 
@@ -569,8 +696,9 @@ from
 															cn_doc_id as documentID, 
 															src_table,
 															src_col 
-															from [GateDB_Cris].[dbo].[gate_hunter_poor_mot_306]
-															where mlObservation1 = 'positive'
+															from [GateDB_Cris].dbo.gate_hunter_poor_mot_suicide_306
+															where mlObservation1 = 'positive' AND
+																  keyObservation1 IS NULL
 															)Table1											
 									inner join
 											  [GateDB_Cris].[dbo].[gate] 
@@ -581,179 +709,197 @@ from
 )Table3
 group by c1
 )PoorMotivationPastCount
+ 
  on 
+ 
  Table1.a = PoorMotivationPastCount.c1
 -------------------------------------------------------------------------------------------------
--- current Poor Affect data
--- for flat affect, the criteria  of positive or NULL is used to extract positive mentions
--- of flat affect
+---- current Poor Affect data
+---- for flat affect, the criteria  of positive or NULL is used to extract positive mentions
+---- of flat affect
+
+--left join
+--(
+--select  distinct(f)
+--from 
+--(
+--SELECT [GateDB_Cris].[dbo].[gate_hunter_bflat_affect_306].BrcId as f, 
+--	   [GateDB_Cris].[dbo].[gate_hunter_bflat_affect_306].CN_Doc_ID as documentID,
+--	   match,
+--	   CONVERT(datetime,[GateDB_Cris].[dbo].[gate].[Date],103) as calendardate,
+--	   mlObservation1
+--  FROM [GateDB_Cris].[dbo].[gate_hunter_bflat_affect_306]
+--left join
+--[GateDB_Cris].[dbo].[gate]
+-- on [GateDB_Cris].[dbo].[gate_hunter_bflat_affect_306].CN_Doc_ID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
+-- )Table1 
+--  where calendardate  between '01-MAR-2015' and '31-AUG-2015'  
+--					 and (mlObservation1 = 'positive' 
+--					 OR mlObservation1 IS NULL)
+-- )FlatAffectRecent
+-- on 
+-- Table1.a = FlatAffectRecent.f
+-- ----------------------------------------------------------------------
+-- --Past 12 months flat affect
+--left join
+--(
+--select distinct(g)
+--from 
+--(
+--SELECT [GateDB_Cris].[dbo].[gate_hunter_bflat_affect_306].BrcId as g, 
+--	   [GateDB_Cris].[dbo].[gate_hunter_bflat_affect_306].CN_Doc_ID as documentID,
+--	  match,
+--	   CONVERT(datetime,[GateDB_Cris].[dbo].[gate].[Date],103) as calendardate,
+--	   mlObservation1
+--  FROM [GateDB_Cris].[dbo].[gate_hunter_bflat_affect_306]
+--left join
+--[GateDB_Cris].[dbo].[gate]
+-- on [GateDB_Cris].[dbo].[gate_hunter_bflat_affect_306].CN_Doc_ID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
+-- )Table1 
+--  where calendardate  between '01-MAR-2014' and '28-FEB-2015'   
+--					 and (mlObservation1 = 'positive' 
+--					 OR mlObservation1 IS NULL)
+-- )FlatAffectPast
+-- on 
+-- Table1.a = FlatAffectPast.g
+-- -----------------------------------------------------------------------------------------------
+--  --Count of Recent FlatAffect
+--left join
+--(
+--select c1,
+--	   COUNT(match) as flataffectcountcurrent   
+--from 
+--			(
+--			select *
+--			from 
+--			(
+--									select Table1.BrcId as c1,
+--										   match,
+--										   documentID,
+--										   Table1.src_col,
+--										   Table1.src_table,
+--										   CONVERT(datetime,[GateDB_Cris].[dbo].[gate].[Date],103) as calendardate
+										    
+--									from 
+--															(
+--															select BrcId,
+--															keyObservation1, 
+--															match, 
+--															cn_doc_id as documentID, 
+--															src_table,
+--															src_col 
+--															from [GateDB_Cris].[dbo].[gate_hunter_bflat_affect_306]
+--															where (mlObservation1 = 'positive' 
+--																OR mlObservation1 IS NULL)
+--															)Table1											
+--									inner join
+--											  [GateDB_Cris].[dbo].[gate] 
+--									on 
+--											  Table1.documentID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
+--			)Table2					 
+--			where calendardate between '01-MAR-2015' and '31-AUG-2015'
+--)Table3
+--group by c1
+--)FlatAffectCurrentCount
+-- on 
+-- Table1.a = FlatAffectCurrentCount.c1
+---------------------------------------------------------------------------------------------------
+--  --Count of Past Flat Affect
+--left join
+--(
+--select c1,
+--	   COUNT(match) as flataffectcountpast
+--from 
+--			(
+--			select *
+--			from 
+--			(
+--									select Table1.BrcId as c1,
+--										   match,
+--										   documentID,
+--										   Table1.src_col,
+--										   Table1.src_table,
+--										   CONVERT(datetime,[GateDB_Cris].[dbo].[gate].[Date],103) as calendardate
+										    
+--									from 
+--															(
+--															select BrcId,
+--															keyObservation1, 
+--															match, 
+--															cn_doc_id as documentID, 
+--															src_table,
+--															src_col 
+--															from [GateDB_Cris].[dbo].[gate_hunter_bflat_affect_306]
+--															where (mlObservation1 = 'positive' 
+--																OR mlObservation1 IS NULL)
+--															)Table1											
+--									inner join
+--											  [GateDB_Cris].[dbo].[gate] 
+--									on 
+--											  Table1.documentID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
+--			)Table2					 
+--			where calendardate between '01-MAR-2014' and '28-FEB-2015'
+--)Table3
+--group by c1
+--)FlatAffectPastCount
+-- on 
+-- Table1.a = FlatAffectPastCount.c1
+-------------------------------------------------------------------------------------------------
+-- current anhedonia 
 
 left join
-(
-select  distinct(f)
-from 
-(
-SELECT [GateDB_Cris].[dbo].[gate_hunter_bflat_affect_306].BrcId as f, 
-	   [GateDB_Cris].[dbo].[gate_hunter_bflat_affect_306].CN_Doc_ID as documentID,
-	   match,
-	   CONVERT(datetime,[GateDB_Cris].[dbo].[gate].[Date],103) as calendardate,
-	   mlObservation1
-  FROM [GateDB_Cris].[dbo].[gate_hunter_bflat_affect_306]
-left join
-[GateDB_Cris].[dbo].[gate]
- on [GateDB_Cris].[dbo].[gate_hunter_bflat_affect_306].CN_Doc_ID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
- )Table1 
-  where calendardate  between '01-MAR-2014' and '01-MAR-2015'   
-					 and (mlObservation1 = 'positive' 
-					 OR mlObservation1 IS NULL)
- )FlatAffectRecent
- on 
- Table1.a = FlatAffectRecent.f
- ----------------------------------------------------------------------
- --Past 12 months flat affect
-left join
-(
-select distinct(g)
-from 
-(
-SELECT [GateDB_Cris].[dbo].[gate_hunter_bflat_affect_306].BrcId as g, 
-	   [GateDB_Cris].[dbo].[gate_hunter_bflat_affect_306].CN_Doc_ID as documentID,
-	  match,
-	   CONVERT(datetime,[GateDB_Cris].[dbo].[gate].[Date],103) as calendardate,
-	   mlObservation1
-  FROM [GateDB_Cris].[dbo].[gate_hunter_bflat_affect_306]
-left join
-[GateDB_Cris].[dbo].[gate]
- on [GateDB_Cris].[dbo].[gate_hunter_bflat_affect_306].CN_Doc_ID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
- )Table1 
-  where calendardate  between '01-MAR-2014' and '28-FEB-2015'   
-					 and (mlObservation1 = 'positive' 
-					 OR mlObservation1 IS NULL)
- )FlatAffectPast
- on 
- Table1.a = FlatAffectPast.g
- -----------------------------------------------------------------------------------------------
-  --Count of Recent FlatAffect
-left join
-(
-select c1,
-	   COUNT(match) as flataffectcountcurrent   
-from 
-			(
-			select *
-			from 
-			(
-									select Table1.BrcId as c1,
-										   match,
-										   documentID,
-										   Table1.src_col,
-										   Table1.src_table,
-										   CONVERT(datetime,[GateDB_Cris].[dbo].[gate].[Date],103) as calendardate
-										    
-									from 
-															(
-															select BrcId,
-															keyObservation1, 
-															match, 
-															cn_doc_id as documentID, 
-															src_table,
-															src_col 
-															from [GateDB_Cris].[dbo].[gate_hunter_bflat_affect_306]
-															where (mlObservation1 = 'positive' 
-																OR mlObservation1 IS NULL)
-															)Table1											
-									inner join
-											  [GateDB_Cris].[dbo].[gate] 
-									on 
-											  Table1.documentID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
-			)Table2					 
-			where calendardate between '01-MAR-2015' and '31-AUG-2015'
-)Table3
-group by c1
-)FlatAffectCurrentCount
- on 
- Table1.a = FlatAffectCurrentCount.c1
--------------------------------------------------------------------------------------------------
-  --Count of Past Flat Affect
-left join
-(
-select c1,
-	   COUNT(match) as flataffectcountpast
-from 
-			(
-			select *
-			from 
-			(
-									select Table1.BrcId as c1,
-										   match,
-										   documentID,
-										   Table1.src_col,
-										   Table1.src_table,
-										   CONVERT(datetime,[GateDB_Cris].[dbo].[gate].[Date],103) as calendardate
-										    
-									from 
-															(
-															select BrcId,
-															keyObservation1, 
-															match, 
-															cn_doc_id as documentID, 
-															src_table,
-															src_col 
-															from [GateDB_Cris].[dbo].[gate_hunter_bflat_affect_306]
-															where (mlObservation1 = 'positive' 
-																OR mlObservation1 IS NULL)
-															)Table1											
-									inner join
-											  [GateDB_Cris].[dbo].[gate] 
-									on 
-											  Table1.documentID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
-			)Table2					 
-			where calendardate between '01-MAR-2014' and '28-FEB-2015'
-)Table3
-group by c1
-)FlatAffectPastCount
- on 
- Table1.a = FlatAffectPastCount.c1
--------------------------------------------------------------------------------------------------
---current anhedonia 
-left join
-(
-select  distinct(h)
-from 
-(
-SELECT [GateDB_Cris].[dbo].[gate_hunter_anhedonia306].BrcId as h, 
-	   [GateDB_Cris].[dbo].[gate_hunter_anhedonia306].CN_Doc_ID as documentID,
-	   match,
-	   CONVERT(datetime,[GateDB_Cris].[dbo].[gate].[Date],103) as calendardate,
-	   mlObservation1
-  FROM [GateDB_Cris].[dbo].[gate_hunter_anhedonia306]
-left join
-[GateDB_Cris].[dbo].[gate]
- on [GateDB_Cris].[dbo].[gate_hunter_anhedonia306].CN_Doc_ID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
- )Table1 
- where calendardate between '01-MAR-2015' and '31-AUG-2015'  and mlObservation1 = 'positive'
- )AnhedoniaRecent
+	(
+	select  distinct(h)
+	from 
+				(
+				SELECT [GateDB_Cris].dbo.gate_hunter_anhedonia_suicide_306.BrcId     as h, 
+					   [GateDB_Cris].dbo.gate_hunter_anhedonia_suicide_306.CN_Doc_ID as documentID,
+					   match,
+					   CONVERT(datetime,[GateDB_Cris].[dbo].[gate].[Date],103)   as calendardate,
+					   mlObservation1,
+					   keyObservation1
+				FROM [GateDB_Cris].dbo.gate_hunter_anhedonia_suicide_306
+				left join
+				[GateDB_Cris].[dbo].[gate]
+				on [GateDB_Cris].dbo.gate_hunter_anhedonia_suicide_306.CN_Doc_ID = 
+				   [GateDB_Cris].[dbo].[gate].CN_Doc_ID
+				) Table1 
+
+	 where	calendardate between '01-MAR-2015' and '31-AUG-2015'  and 
+			mlObservation1 = 'positive' and 
+			keyObservation1 is null
+	 )AnhedoniaRecent
  on 
  Table1.a = AnhedoniaRecent.h
  ----------------------------------------------------------------------
  --Past 12 months anhedonia
 left join
-(
-select distinct(i)
-from 
-(
-SELECT [GateDB_Cris].[dbo].[gate_hunter_anhedonia306].BrcId as i, 
-	   [GateDB_Cris].[dbo].[gate_hunter_anhedonia306].CN_Doc_ID as documentID,
-	  match,
-	   CONVERT(datetime,[GateDB_Cris].[dbo].[gate].[Date],103) as calendardate,
-	   mlObservation1
-  FROM [GateDB_Cris].[dbo].[gate_hunter_anhedonia306]
-left join
-[GateDB_Cris].[dbo].[gate]
- on [GateDB_Cris].[dbo].[gate_hunter_anhedonia306].CN_Doc_ID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
- )Table1 
- where calendardate between '01-MAR-2014' and '28-FEB-2015'  and mlObservation1 = 'positive'
- )AnhedoniaPast
+	(
+	select distinct(i)
+	from 
+			  (
+			  SELECT [GateDB_Cris].dbo.gate_hunter_anhedonia_suicide_306.BrcId		as i, 
+				   [GateDB_Cris].dbo.gate_hunter_anhedonia_suicide_306.CN_Doc_ID	as documentID,
+				   match,
+				   CONVERT(datetime,[GateDB_Cris].[dbo].[gate].[Date],103)			as calendardate,
+				   mlObservation1,
+				   keyObservation1
+			  FROM [GateDB_Cris].dbo.gate_hunter_anhedonia_suicide_306
+
+			  left join
+			  
+			  [GateDB_Cris].[dbo].[gate]
+			  
+			  on [GateDB_Cris].dbo.gate_hunter_anhedonia_suicide_306.CN_Doc_ID = 
+			     [GateDB_Cris].[dbo].[gate].CN_Doc_ID
+			  
+			  )Table1 
+
+	where	calendardate between '01-MAR-2014' and '28-FEB-2015'  and 
+			mlObservation1 = 'positive' and
+			keyObservation1 is null
+	)AnhedoniaPast
+	
  on 
  Table1.a = AnhedoniaPast.i
  -----------------------------------------------------------------------------------------------
@@ -782,8 +928,9 @@ from
 															cn_doc_id as documentID, 
 															src_table,
 															src_col 
-															from [GateDB_Cris].[dbo].[gate_hunter_anhedonia306]
-															where mlObservation1 = 'positive' 
+															from [GateDB_Cris].dbo.gate_hunter_anhedonia_suicide_306
+															where mlObservation1 = 'positive' and
+																  keyObservation1 is null
 															)Table1											
 									inner join
 											  [GateDB_Cris].[dbo].[gate] 
@@ -824,8 +971,9 @@ from
 															cn_doc_id as documentID, 
 															src_table,
 															src_col 
-															from [GateDB_Cris].[dbo].[gate_hunter_anhedonia306]
-															where mlObservation1 = 'positive'
+															from [GateDB_Cris].dbo.gate_hunter_anhedonia_suicide_306
+															where	mlObservation1 = 'positive' and
+																	keyObservation1 is null
 															)Table1											
 									inner join
 											  [GateDB_Cris].[dbo].[gate] 
@@ -841,43 +989,56 @@ group by c1
 -------------------------------------------------------------------------------------------------
 --current hopelessness data
 left join
-(
-select  distinct(j)
-from 
-(
-SELECT [GateDB_Cris].[dbo].[gate_hunter_hopeless306].BrcId as j, 
-	   [GateDB_Cris].[dbo].[gate_hunter_hopeless306].CN_Doc_ID as documentID,
-	   match,
-	   CONVERT(datetime,[GateDB_Cris].[dbo].[gate].[Date],103) as calendardate,
-	   mlObservation1
-  FROM [GateDB_Cris].[dbo].[gate_hunter_hopeless306]
-left join
-[GateDB_Cris].[dbo].[gate]
- on [GateDB_Cris].[dbo].[gate_hunter_hopeless306].CN_Doc_ID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
- )Table1 
- where calendardate between '01-MAR-2015' and '31-AUG-2015' and mlObservation1 = 'positive'
- )HopelessRecent
+				(
+				select  distinct(j)
+				from 
+							(
+							SELECT [GateDB_Cris].dbo.gate_hunter_hopeless_suicide_306.BrcId as j, 
+								   [GateDB_Cris].dbo.gate_hunter_hopeless_suicide_306.CN_Doc_ID as documentID,
+								   match,
+								   CONVERT(datetime,[GateDB_Cris].[dbo].[gate].[Date],103) as calendardate,
+								   mlObservation1,
+								   keyObservation1
+							FROM [GateDB_Cris].dbo.gate_hunter_hopeless_suicide_306
+
+							left join
+
+							[GateDB_Cris].[dbo].[gate]
+
+							on [GateDB_Cris].dbo.gate_hunter_hopeless_suicide_306.CN_Doc_ID = 
+							   [GateDB_Cris].[dbo].[gate].CN_Doc_ID
+							   
+							)Table1 
+				where	calendardate between '01-MAR-2015' and '31-AUG-2015' and 
+						mlObservation1 = 'positive' and
+						keyObservation1 is null
+				 )HopelessRecent
  on 
  Table1.a = HopelessRecent.j
  ----------------------------------------------------------------------
  --Past 12 months hopeless
 left join
-(
-select distinct(k)
-from 
-(
-SELECT [GateDB_Cris].[dbo].[gate_hunter_hopeless306].BrcId as k, 
-	   [GateDB_Cris].[dbo].[gate_hunter_hopeless306].CN_Doc_ID as documentID,
-	  match,
-	   CONVERT(datetime,[GateDB_Cris].[dbo].[gate].[Date],103) as calendardate,
-	   mlObservation1
-  FROM [GateDB_Cris].[dbo].[gate_hunter_hopeless306]
-left join
-[GateDB_Cris].[dbo].[gate]
- on [GateDB_Cris].[dbo].[gate_hunter_hopeless306].CN_Doc_ID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
- )Table1 
- where calendardate between '01-MAR-2014' and '28-FEB-2015'  and mlObservation1 = 'positive'
- )HopelessPast
+		(
+		select	distinct(k)
+		from 
+						(
+						SELECT		[GateDB_Cris].dbo.gate_hunter_hopeless_suicide_306.BrcId		as k, 
+									[GateDB_Cris].dbo.gate_hunter_hopeless_suicide_306.CN_Doc_ID	as documentID,
+									match,
+									CONVERT(datetime,[GateDB_Cris].[dbo].[gate].[Date],103)	as calendardate,
+									mlObservation1,
+									keyObservation1
+						FROM		[GateDB_Cris].dbo.gate_hunter_hopeless_suicide_306
+						left join
+									[GateDB_Cris].[dbo].[gate]
+						
+						on			[GateDB_Cris].dbo.gate_hunter_hopeless_suicide_306.CN_Doc_ID = 
+									[GateDB_Cris].[dbo].[gate].CN_Doc_ID
+						)Table1 
+		where	calendardate between '01-MAR-2014' and '28-FEB-2015'  and 
+				mlObservation1 = 'positive' and
+				keyObservation1 is NULL
+		)HopelessPast
  on 
  Table1.a = HopelessPast.k
  -----------------------------------------------------------------------------------------------
@@ -906,8 +1067,9 @@ from
 															cn_doc_id as documentID, 
 															src_table,
 															src_col 
-															from [GateDB_Cris].[dbo].[gate_hunter_hopeless306]
-															where mlObservation1 = 'positive' 
+															from [GateDB_Cris].dbo.gate_hunter_hopeless_suicide_306
+															where mlObservation1 = 'positive' AND
+																  keyObservation1 IS NULL
 															)Table1											
 									inner join
 											  [GateDB_Cris].[dbo].[gate] 
@@ -946,8 +1108,9 @@ from
 															cn_doc_id as documentID, 
 															src_table,
 															src_col 
-															from [GateDB_Cris].[dbo].[gate_hunter_hopeless306]
-															where mlObservation1 = 'positive'
+															from [GateDB_Cris].dbo.gate_hunter_hopeless_suicide_306
+															where	mlObservation1 = 'positive' AND 
+																	keyObservation1 IS NULL
 															)Table1											
 									inner join
 											  [GateDB_Cris].[dbo].[gate] 
@@ -966,43 +1129,51 @@ group by c1
 -- Stick to positive.
 
 left join
-(
-select  distinct(l)
-from 
-(
-SELECT [GateDB_Cris].[dbo].[gate_hunter_worthless306].BrcId as l, 
-	   [GateDB_Cris].[dbo].[gate_hunter_worthless306].CN_Doc_ID as documentID,
-	   match,
-	   CONVERT(datetime,[GateDB_Cris].[dbo].[gate].[Date],103) as calendardate,
-	   mlObservation1
-  FROM [GateDB_Cris].[dbo].[gate_hunter_worthless306]
-left join
-[GateDB_Cris].[dbo].[gate]
- on [GateDB_Cris].[dbo].[gate_hunter_worthless306].CN_Doc_ID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
- )Table1 
- where calendardate between '01-MAR-2015' and '31-AUG-2015' and mlObservation1 = 'positive'
- )WorthlessRecent
+		(
+		select  distinct(l)
+		from 
+						(
+						SELECT [GateDB_Cris].dbo.gate_hunter_worthless_suicide_306.BrcId			as l, 
+							   [GateDB_Cris].dbo.gate_hunter_worthless_suicide_306.CN_Doc_ID		as documentID,
+							   match,
+							   CONVERT(datetime,[GateDB_Cris].[dbo].[gate].[Date],103)				as calendardate,
+							   mlObservation1,
+							   keyObservation1
+						FROM [GateDB_Cris].dbo.gate_hunter_worthless_suicide_306
+
+						left join   [GateDB_Cris].[dbo].[gate]
+						on			[GateDB_Cris].dbo.gate_hunter_worthless_suicide_306.CN_Doc_ID = 
+									[GateDB_Cris].[dbo].[gate].CN_Doc_ID
+						)Table1 
+		 where	calendardate between '01-MAR-2015' and '31-AUG-2015' and 
+				mlObservation1 = 'positive' AND 
+				keyObservation1 IS NULL
+		 )WorthlessRecent
  on 
  Table1.a = WorthlessRecent.l
  ----------------------------------------------------------------------
  --Past 12 months worthless
 left join
-(
-select distinct(m)
-from 
-(
-SELECT [GateDB_Cris].[dbo].[gate_hunter_worthless306].BrcId as m, 
-	   [GateDB_Cris].[dbo].[gate_hunter_worthless306].CN_Doc_ID as documentID,
-	  match,
-	   CONVERT(datetime,[GateDB_Cris].[dbo].[gate].[Date],103) as calendardate,
-	   mlObservation1
-  FROM [GateDB_Cris].[dbo].[gate_hunter_worthless306]
-left join
-[GateDB_Cris].[dbo].[gate]
- on [GateDB_Cris].[dbo].[gate_hunter_worthless306].CN_Doc_ID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
- )Table1 
- where calendardate between '01-MAR-2014' and '28-FEB-2015'  and mlObservation1 = 'positive'
- )WorthlessPast
+		(
+		select distinct(m)
+		from 
+							(
+							SELECT [GateDB_Cris].dbo.gate_hunter_worthless_suicide_306.BrcId		as m, 
+								   [GateDB_Cris].dbo.gate_hunter_worthless_suicide_306.CN_Doc_ID	as documentID,
+								   match,
+								   CONVERT(datetime,[GateDB_Cris].[dbo].[gate].[Date],103)			as calendardate,
+								   mlObservation1,
+								   keyObservation1
+							FROM [GateDB_Cris].dbo.gate_hunter_worthless_suicide_306
+							left join
+								[GateDB_Cris].[dbo].[gate]
+							on	[GateDB_Cris].dbo.gate_hunter_worthless_suicide_306.CN_Doc_ID = 
+								[GateDB_Cris].[dbo].[gate].CN_Doc_ID
+							)Table1 
+		 where	calendardate between '01-MAR-2014' and '28-FEB-2015'  and 
+				mlObservation1 = 'positive' and
+				keyobservation1 is NULL
+		 )WorthlessPast
  on 
  Table1.a = WorthlessPast.m
  -----------------------------------------------------------------------------------------------
@@ -1031,8 +1202,9 @@ from
 															cn_doc_id as documentID, 
 															src_table,
 															src_col 
-															from [GateDB_Cris].[dbo].[gate_hunter_worthless306]
-															where mlObservation1 = 'positive'
+															from [GateDB_Cris].dbo.gate_hunter_worthless_suicide_306
+															where	mlObservation1 = 'positive' AND
+																	keyObservation1 IS NULL
 															)Table1											
 									inner join
 											  [GateDB_Cris].[dbo].[gate] 
@@ -1071,8 +1243,9 @@ from
 															cn_doc_id as documentID, 
 															src_table,
 															src_col 
-															from [GateDB_Cris].[dbo].[gate_hunter_worthless306]
-															where mlObservation1 = 'positive'
+															from [GateDB_Cris].dbo.gate_hunter_worthless_suicide_306
+															where	mlObservation1 = 'positive' AND
+																	keyObservation1 IS NULL
 															)Table1											
 									inner join
 											  [GateDB_Cris].[dbo].[gate] 
@@ -1095,45 +1268,155 @@ group by c1
 
 left join
 (
-select  distinct(n)
-from 
-(
-SELECT [SQLCRIS_User].[dbo].[Afernandes_SuicideAttempt_Post_Processing].BrcId as n, 
-	   [SQLCRIS_User].[dbo].[Afernandes_SuicideAttempt_Post_Processing].CN_Doc_ID as documentID,
-	   match,
-	   CONVERT(datetime,[GateDB_Cris].[dbo].[gate].[Date],103) as calendardate,
-	   mlObservation1
-  FROM [SQLCRIS_User].[dbo].[Afernandes_SuicideAttempt_Post_Processing]
-left join
-[GateDB_Cris].[dbo].[gate]
- on [SQLCRIS_User].[dbo].[Afernandes_SuicideAttempt_Post_Processing].CN_Doc_ID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
- )Table1 
- where calendardate between '01-MAR-2015' and '31-AUG-2015'  and mlObservation1 = 'positive'
- )SuicideARecent
+			select  distinct(n)
+			from 
+								(
+								SELECT [SQLCRIS_User].[dbo].[Afernandes_SuicideAttempt_Post_Processing].BrcId		as n, 
+									   [SQLCRIS_User].[dbo].[Afernandes_SuicideAttempt_Post_Processing].CN_Doc_ID	as documentID,
+										match,
+										CONVERT(datetime,[GateDB_Cris].[dbo].[gate].[Date],103)						as calendardate,
+										mlObservation1
+								FROM [SQLCRIS_User].[dbo].[Afernandes_SuicideAttempt_Post_Processing]
+								left join
+								[GateDB_Cris].[dbo].[gate]
+								on	[SQLCRIS_User].[dbo].[Afernandes_SuicideAttempt_Post_Processing].CN_Doc_ID = 
+									[GateDB_Cris].[dbo].[gate].CN_Doc_ID
+								)Table1 
+			 where	calendardate between '01-MAR-2015' and '31-AUG-2015'  and 
+					mlObservation1 = 'positive'
+			 )SuicideARecent
  on 
  Table1.a = SuicideARecent.n
  ----------------------------------------------------------------------
  --Past 12 months suicide attempt
 left join
-(
-select distinct(o)
-from 
-(
-SELECT [SQLCRIS_User].[dbo].[Afernandes_SuicideAttempt_Post_Processing].BrcId as o, 
-	   [SQLCRIS_User].[dbo].[Afernandes_SuicideAttempt_Post_Processing].CN_Doc_ID as documentID,
-	  match,
-	   CONVERT(datetime,[GateDB_Cris].[dbo].[gate].[Date],103) as calendardate,
-	   mlObservation1
-  FROM [SQLCRIS_User].[dbo].[Afernandes_SuicideAttempt_Post_Processing]
-left join
-[GateDB_Cris].[dbo].[gate]
- on [SQLCRIS_User].[dbo].[Afernandes_SuicideAttempt_Post_Processing].CN_Doc_ID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
- )Table1 
- where calendardate between '01-MAR-2014' and '28-FEB-2015' and mlObservation1 = 'positive'
- )SuicideAPast
+	(
+	select distinct(o)
+	from 
+					(
+					SELECT [SQLCRIS_User].[dbo].[Afernandes_SuicideAttempt_Post_Processing].BrcId		as o, 
+						   [SQLCRIS_User].[dbo].[Afernandes_SuicideAttempt_Post_Processing].CN_Doc_ID	as documentID,
+							match,
+							CONVERT(datetime,[GateDB_Cris].[dbo].[gate].[Date],103)						as calendardate,
+							mlObservation1
+					FROM [SQLCRIS_User].[dbo].[Afernandes_SuicideAttempt_Post_Processing]
+					left join
+					[GateDB_Cris].[dbo].[gate]
+					on [SQLCRIS_User].[dbo].[Afernandes_SuicideAttempt_Post_Processing].CN_Doc_ID = 
+					   [GateDB_Cris].[dbo].[gate].CN_Doc_ID
+					)Table1 
+	where	calendardate between '01-MAR-2014' and '28-FEB-2015' and 
+			mlObservation1 = 'positive' 
+	)SuicideAPast
  on 
  Table1.a = SuicideAPast.o
+  ----------------------------------------------------------------------
+ --Past 12 months suicide IDEATION
+left join
+( 
+
+  select distinct(o)
+  
+  from 
+
+	(
+		select  o,
+				calendardate,
+				ideation
+		from 
+						(
+					SELECT [GateDB_Cris].dbo.gate_ideation_test_andrea.BrcId as o, 
+						   [GateDB_Cris].dbo.gate_ideation_test_andrea.CN_Doc_ID as documentID,
+						   Document_Date,
+						   CONVERT(datetime,Document_Date,103) as calendardate,
+						   ideation
+						  -- match,
+						  -- mlObservation1
+					  FROM [GateDB_Cris].dbo.gate_ideation_test_andrea
+					     )SuicideIdeationPastA
+		 where calendardate between '01-MAR-2014' and '28-FEB-2015' and ideation = 'Positve'
+	)SuicideIdeationPastB					  
+)SuicideIdeationPast
+ on 
+ Table1.a = SuicideIdeationPast.o
+ 
+-- NOTE: gate_ideation_test_andrea under GATEDB_Cris is backed up in SQLCRIS_User under the same
+-- name. 
+
  -----------------------------------------------------------------------------------------------
+ --Future 6 months suicide IDEATION
+left join
+( 
+
+  select distinct(o11)
+  
+  from 
+
+	(
+		select  o11,
+				calendardate,
+				ideation
+		from 
+					(
+					SELECT	[GateDB_Cris].dbo.gate_ideation_test_andrea.BrcId as o11, 
+							[GateDB_Cris].dbo.gate_ideation_test_andrea.CN_Doc_ID as documentID,
+							Document_Date,
+							CONVERT(datetime,Document_Date,103) as calendardate,
+							ideation
+							-- match,
+							-- mlObservation1
+					FROM	[GateDB_Cris].dbo.gate_ideation_test_andrea
+					)SuicideIdeationPastA
+		 where	calendardate between '01-SEP-2015' and '29-FEB-2016' and 
+				ideation = 'Positve'
+	)SuicideIdeationFuture					  
+)SuicideIdeationFutureSixMonths
+ on 
+ Table1.a = SuicideIdeationFutureSixMonths.o11
+ -----------------------------------------------------------------------------------------------
+ 
+  --Count of Future 6 months suicide IDEATION
+left join
+(
+select c1,
+	   COUNT(ideation) as suicideideationcountFUTURE
+from 
+			(
+			select *
+			from 
+			(
+									select Table1.BrcId as c1,
+										   ideation,
+										   documentID,
+										   Table1.src_col,
+										   Table1.src_table,
+										   CONVERT(datetime,[GateDB_Cris].[dbo].[gate].[Date],103) as calendardate
+										    
+									from 
+															(
+															select BrcId,
+															--keyObservation1, 
+															ideation, 
+															cn_doc_id as documentID, 
+															src_table,
+															src_col 
+															FROM [GateDB_Cris].dbo.gate_ideation_test_andrea
+															where ideation = 'Positve'
+															)Table1											
+									inner join
+											  [GateDB_Cris].[dbo].[gate] 
+									on 
+											  Table1.documentID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
+			)Table2					 
+			where calendardate between '01-SEP-2015' and '29-FEB-2016'
+)Table3
+group by c1
+)SuicideIFutureCount
+ on 
+ Table1.a = SuicideIFutureCount.c1
+ 
+ ------------------------------------------------------------------------------------------
+ 
   --Count of Recent Suicide Attempt
 left join
 (
@@ -1213,30 +1496,75 @@ group by c1
 )SuicideAPastCount
  on 
  Table1.a = SuicideAPastCount.c1
+ 
+ 
+ -------------------------------------------------------------------------------------------------
+  --Count of Past Suicide Ideation
+left join
+(
+select c1,
+	   COUNT(ideation) as suicideideationcountpast
+from 
+			(
+			select *
+			from 
+			(
+									select Table1.BrcId as c1,
+										   ideation,
+										   documentID,
+										   Table1.src_col,
+										   Table1.src_table,
+										   CONVERT(datetime,[GateDB_Cris].[dbo].[gate].[Date],103) as calendardate
+										    
+									from 
+															(
+															select BrcId,
+															--keyObservation1, 
+															ideation, 
+															cn_doc_id as documentID, 
+															src_table,
+															src_col 
+															FROM [GateDB_Cris].dbo.gate_ideation_test_andrea
+															where ideation = 'Positve'
+															)Table1											
+									inner join
+											  [GateDB_Cris].[dbo].[gate] 
+									on 
+											  Table1.documentID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
+			)Table2					 
+			where calendardate between '01-MAR-2014' and '28-FEB-2015'
+)Table3
+group by c1
+)SuicideIPastCount
+ on 
+ Table1.a = SuicideIPastCount.c1
 -------------------------------------------------------------------------------------------------
---current anergia data
--- on positve and negative flags for anergia. 
+-- current anergia data
 -- extraction code fine as it is. 
 
 
 
 left join
-(
-select  distinct(p)
-from 
-(
-SELECT [GateDB_Cris].[dbo].[gate_hunter_anergia306].BrcId as p, 
-	   [GateDB_Cris].[dbo].[gate_hunter_anergia306].CN_Doc_ID as documentID,
-	   match,
-	   CONVERT(datetime,[GateDB_Cris].[dbo].[gate].[Date],103) as calendardate,
-	   mlObservation1
-  FROM [GateDB_Cris].[dbo].[gate_hunter_anergia306]
-left join
-[GateDB_Cris].[dbo].[gate]
- on [GateDB_Cris].[dbo].[gate_hunter_anergia306].CN_Doc_ID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
- )Table1 
- where calendardate between '01-MAR-2015' and '31-AUG-2015' and mlObservation1 = 'positive'
- )AnergiaRecent
+		(
+		select  distinct(p)
+		from 
+						(
+						SELECT [GateDB_Cris].dbo.gate_hunter_anergia_suicide_306.BrcId			as p, 
+							   [GateDB_Cris].dbo.gate_hunter_anergia_suicide_306.CN_Doc_ID		as documentID,
+								match,
+								CONVERT(datetime,[GateDB_Cris].[dbo].[gate].[Date],103)			as calendardate,
+								mlObservation1,
+								keyObservation1
+						  FROM [GateDB_Cris].dbo.gate_hunter_anergia_suicide_306
+						left join
+						[GateDB_Cris].[dbo].[gate]
+						on	[GateDB_Cris].dbo.gate_hunter_anergia_suicide_306.CN_Doc_ID = 
+							[GateDB_Cris].[dbo].[gate].CN_Doc_ID
+						)Table1 
+		where	calendardate between '01-MAR-2015' and '31-AUG-2015' and 
+				mlObservation1 = 'positive' and
+				keyObservation1 is NULL
+		)AnergiaRecent
  on 
  Table1.a = AnergiaRecent.p
  ----------------------------------------------------------------------
@@ -1245,19 +1573,23 @@ left join
 (
 select distinct(q)
 from 
-(
-SELECT [GateDB_Cris].[dbo].[gate_hunter_anergia306].BrcId as q, 
-	   [GateDB_Cris].[dbo].[gate_hunter_anergia306].CN_Doc_ID as documentID,
-	  match,
-	   CONVERT(datetime,[GateDB_Cris].[dbo].[gate].[Date],103) as calendardate,
-	   mlObservation1
-  FROM [GateDB_Cris].[dbo].[gate_hunter_anergia306]
-left join
-[GateDB_Cris].[dbo].[gate]
- on [GateDB_Cris].[dbo].[gate_hunter_anergia306].CN_Doc_ID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
- )Table1 
- where calendardate between '01-MAR-2014' and '28-FEB-2015'  and mlObservation1 = 'positive'
- )AnergiaPast
+					(
+					SELECT  [GateDB_Cris].dbo.gate_hunter_anergia_suicide_306.BrcId			as q, 
+						    [GateDB_Cris].dbo.gate_hunter_anergia_suicide_306.CN_Doc_ID		as documentID,
+							 match,
+							 CONVERT(datetime,[GateDB_Cris].[dbo].[gate].[Date],103)		as calendardate,
+							 mlObservation1,
+							 keyObservation1
+					FROM	[GateDB_Cris].dbo.gate_hunter_anergia_suicide_306
+					left join
+							[GateDB_Cris].[dbo].[gate]
+					on		[GateDB_Cris].[dbo].[gate_hunter_anergia_suicide_306].[CN_Doc_ID] =
+							[GateDB_Cris].[dbo].[gate].CN_Doc_ID
+					)Table1 
+where	calendardate between '01-MAR-2014' and '28-FEB-2015'  and 
+		mlObservation1 = 'positive' and
+		keyObservation1 is NULL
+)AnergiaPast
  on 
  Table1.a = AnergiaPast.q
  
@@ -1286,8 +1618,9 @@ from
 															cn_doc_id as documentID, 
 															src_table,
 															src_col 
-															from [GateDB_Cris].[dbo].[gate_hunter_anergia306]
-															where mlObservation1 = 'positive'
+															from [GateDB_Cris].dbo.gate_hunter_anergia_suicide_306
+															where	mlObservation1 = 'positive' AND
+																	keyObservation1 IS NULL
 															)Table1											
 									inner join
 											  [GateDB_Cris].[dbo].[gate] 
@@ -1326,8 +1659,9 @@ from
 															cn_doc_id as documentID, 
 															src_table,
 															src_col 
-															from [GateDB_Cris].[dbo].[gate_hunter_anergia306]
-															where mlObservation1 = 'positive'
+															from [GateDB_Cris].dbo.gate_hunter_anergia_suicide_306
+															where	mlObservation1 = 'positive' AND
+																	keyObservation1 IS NULL
 															)Table1											
 									inner join
 											  [GateDB_Cris].[dbo].[gate] 
@@ -1361,43 +1695,51 @@ group by c1
 
 
 left join
-(
-select  distinct(r)
-from 
-(
-SELECT [GateDB_Cris].[dbo].[gate_hunter_apathy306].BrcId as r, 
-	   [GateDB_Cris].[dbo].[gate_hunter_apathy306].CN_Doc_ID as documentID,
-	   match,
-	   CONVERT(datetime,[GateDB_Cris].[dbo].[gate].[Date],103) as calendardate,
-	   mlObservation1
-  FROM [GateDB_Cris].[dbo].[gate_hunter_apathy306]
-left join
-[GateDB_Cris].[dbo].[gate]
- on [GateDB_Cris].[dbo].[gate_hunter_apathy306].CN_Doc_ID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
- )Table1 
- where calendardate between '01-MAR-2015' and '31-AUG-2015' and mlObservation1 = 'positive'
- )ApathyRecent
+		(
+		select  distinct(r)
+		from 
+							(
+							SELECT	[GateDB_Cris].dbo.gte_hunter_apathy_suicide_306.BrcId		as r, 
+									[GateDB_Cris].dbo.gte_hunter_apathy_suicide_306.CN_Doc_ID	as documentID,
+									match,
+									CONVERT(datetime,[GateDB_Cris].[dbo].[gate].[Date],103)		as calendardate,
+									mlObservation1,
+									keyObservation1
+							FROM	[GateDB_Cris].dbo.gte_hunter_apathy_suicide_306
+							left join
+									[GateDB_Cris].[dbo].[gate]
+							on		[GateDB_Cris].dbo.gte_hunter_apathy_suicide_306.CN_Doc_ID = 
+									[GateDB_Cris].[dbo].[gate].CN_Doc_ID
+							)Table1 
+		 where	calendardate between '01-MAR-2015' and '31-AUG-2015' and 
+				mlObservation1 = 'positive' and
+				keyObservation1 is NULL
+		 )ApathyRecent
  on 
  Table1.a = ApathyRecent.r
  ----------------------------------------------------------------------
  --Past 12 months apathy
 left join
-(
-select distinct(s)
-from 
-(
-SELECT [GateDB_Cris].[dbo].[gate_hunter_apathy306].BrcId as s, 
-	   [GateDB_Cris].[dbo].[gate_hunter_apathy306].CN_Doc_ID as documentID,
-	  match,
-	   CONVERT(datetime,[GateDB_Cris].[dbo].[gate].[Date],103) as calendardate,
-	   mlObservation1
-  FROM [GateDB_Cris].[dbo].[gate_hunter_apathy306]
-left join
-[GateDB_Cris].[dbo].[gate]
- on [GateDB_Cris].[dbo].[gate_hunter_apathy306].CN_Doc_ID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
- )Table1 
- where calendardate between '01-MAR-2014' and '28-FEB-2015' and mlObservation1 = 'positive'
- )ApathyPast
+			(
+			select distinct(s)
+			from 
+								(
+								SELECT	[GateDB_Cris].dbo.gte_hunter_apathy_suicide_306.BrcId		as s, 
+										[GateDB_Cris].dbo.gte_hunter_apathy_suicide_306.CN_Doc_ID	as documentID,
+										match,
+										CONVERT(datetime,[GateDB_Cris].[dbo].[gate].[Date],103)		as calendardate,
+										mlObservation1,
+										keyObservation1
+								FROM	[GateDB_Cris].dbo.gte_hunter_apathy_suicide_306
+								left join
+										[GateDB_Cris].[dbo].[gate]
+								on		[GateDB_Cris].dbo.gte_hunter_apathy_suicide_306.CN_Doc_ID = 
+										[GateDB_Cris].[dbo].[gate].CN_Doc_ID
+								)Table1 
+			 where	calendardate between '01-MAR-2014' and '28-FEB-2015' and 
+					mlObservation1 = 'positive' and
+					keyObservation1 is NULL
+			 )ApathyPast
  on 
  Table1.a = ApathyPast.s
  
@@ -1426,8 +1768,9 @@ from
 															cn_doc_id as documentID, 
 															src_table,
 															src_col 
-															from [GateDB_Cris].[dbo].[gate_hunter_apathy306]
-															where mlObservation1 = 'positive'
+															from [GateDB_Cris].dbo.gte_hunter_apathy_suicide_306
+															where	mlObservation1 = 'positive' AND
+																	keyObservation1 IS NULL
 															)Table1											
 									inner join
 											  [GateDB_Cris].[dbo].[gate] 
@@ -1466,8 +1809,9 @@ from
 															cn_doc_id as documentID, 
 															src_table,
 															src_col 
-															from [GateDB_Cris].[dbo].[gate_hunter_apathy306]
-															where mlObservation1 = 'positive'
+															from [GateDB_Cris].dbo.gte_hunter_apathy_suicide_306
+															where	mlObservation1 = 'positive' AND
+																	keyObservation1 IS NULL
 															)Table1											
 									inner join
 											  [GateDB_Cris].[dbo].[gate] 
@@ -1486,43 +1830,51 @@ group by c1
 ---------------------------------------------------------------------------------
 -- Current Insomnia
 left join
-(
-select  distinct(t)
-from 
-(
-SELECT [GateDB_Cris].[dbo].[gate_hunter_insomnia306].BrcId as t, 
-	   [GateDB_Cris].[dbo].[gate_hunter_insomnia306].CN_Doc_ID as documentID,
-	   match,
-	   CONVERT(datetime,[GateDB_Cris].[dbo].[gate].[Date],103) as calendardate,
-	   mlObservation1
-  FROM [GateDB_Cris].[dbo].[gate_hunter_insomnia306]
-left join
-[GateDB_Cris].[dbo].[gate]
- on [GateDB_Cris].[dbo].[gate_hunter_insomnia306].CN_Doc_ID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
- )Table1 
- where calendardate between '01-MAR-2015' and '31-AUG-2015' and mlObservation1 = 'positive'
- )InsomniaRecent
+		(
+		select  distinct(t)
+		from 
+								(
+								SELECT	[GateDB_Cris].dbo.gate_hunter_insomnia_suicide_306.BrcId		as t, 
+										[GateDB_Cris].dbo.gate_hunter_insomnia_suicide_306.CN_Doc_ID	as documentID,
+										match,
+										CONVERT(datetime,[GateDB_Cris].[dbo].[gate].[Date],103)			as calendardate,
+										mlObservation1,
+										keyObservation1
+								FROM	[GateDB_Cris].dbo.gate_hunter_insomnia_suicide_306
+								left join
+										[GateDB_Cris].[dbo].[gate]
+								on		[GateDB_Cris].dbo.gate_hunter_insomnia_suicide_306.CN_Doc_ID = 
+										[GateDB_Cris].[dbo].[gate].CN_Doc_ID
+								)Table1 
+		 where	calendardate between '01-MAR-2015' and '31-AUG-2015' and 
+				mlObservation1 = 'positive' and
+				keyObservation1 is NULL
+		 )InsomniaRecent
  on 
  Table1.a = InsomniaRecent.t
  ----------------------------------------------------------------------
  --Past 12 months insomnia
 left join
-(
-select distinct(u)
-from 
-(
-SELECT [GateDB_Cris].[dbo].[gate_hunter_insomnia306].BrcId as u, 
-	   [GateDB_Cris].[dbo].[gate_hunter_insomnia306].CN_Doc_ID as documentID,
-	  match,
-	   CONVERT(datetime,[GateDB_Cris].[dbo].[gate].[Date],103) as calendardate,
-	   mlObservation1
-  FROM [GateDB_Cris].[dbo].[gate_hunter_insomnia306]
-left join
-[GateDB_Cris].[dbo].[gate]
- on [GateDB_Cris].[dbo].[gate_hunter_insomnia306].CN_Doc_ID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
- )Table1 
- where calendardate between '01-MAR-2014' and '28-FEB-2015'  and mlObservation1 = 'positive'
- )InsomniaPast
+			(
+			select distinct(u)
+			from 
+							(
+							SELECT	[GateDB_Cris].dbo.gate_hunter_insomnia_suicide_306.BrcId		as u, 
+									[GateDB_Cris].dbo.gate_hunter_insomnia_suicide_306.CN_Doc_ID	as documentID,
+									match,
+									CONVERT(datetime,[GateDB_Cris].[dbo].[gate].[Date],103)			as calendardate,
+									mlObservation1,
+									keyObservation1
+							FROM	[GateDB_Cris].dbo.gate_hunter_insomnia_suicide_306
+							left join
+									[GateDB_Cris].[dbo].[gate]
+							on		[GateDB_Cris].dbo.gate_hunter_insomnia_suicide_306.CN_Doc_ID = 
+									[GateDB_Cris].[dbo].[gate].CN_Doc_ID
+							)Table1 
+			 where	calendardate between '01-MAR-2014' and '28-FEB-2015'  and 
+					mlObservation1 = 'positive' AND
+					keyObservation1 IS NULL
+			 )InsomniaPast
  on 
  Table1.a = InsomniaPast.u
  
@@ -1551,8 +1903,9 @@ from
 															cn_doc_id as documentID, 
 															src_table,
 															src_col 
-															from [GateDB_Cris].[dbo].[gate_hunter_insomnia306]
-															where mlObservation1 = 'positive'
+															from [GateDB_Cris].dbo.gate_hunter_insomnia_suicide_306
+															where	mlObservation1 = 'positive' AND
+																	keyObservation1 IS NULL
 															)Table1											
 									inner join
 											  [GateDB_Cris].[dbo].[gate] 
@@ -1591,8 +1944,9 @@ from
 															cn_doc_id as documentID, 
 															src_table,
 															src_col 
-															from [GateDB_Cris].[dbo].[gate_hunter_insomnia306]
-															where mlObservation1 = 'positive'
+															from [GateDB_Cris].dbo.gate_hunter_insomnia_suicide_306
+															where	mlObservation1 = 'positive' AND
+																	keyObservation1 IS NULL
 															)Table1											
 									inner join
 											  [GateDB_Cris].[dbo].[gate] 
@@ -1608,129 +1962,129 @@ group by c1
  
  Table1.a = InsomniaPastCount.c1
 ---------------------------------------------------------------------------------
--- Aggression Current
+---- Aggression Current
 
-left join
-(
-select  distinct(v)
-from 
-(
-SELECT [GateDB_Cris].[dbo].[gate_hunter_aggression_306].BrcId as v, 
-	   [GateDB_Cris].[dbo].[gate_hunter_aggression_306].CN_Doc_ID as documentID,
-	   match,
-	   CONVERT(datetime,[GateDB_Cris].[dbo].[gate].[Date],103) as calendardate,
-	   mlObservation1
-  FROM [GateDB_Cris].[dbo].[gate_hunter_aggression_306]
-left join
-[GateDB_Cris].[dbo].[gate]
- on [GateDB_Cris].[dbo].[gate_hunter_aggression_306].CN_Doc_ID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
- )Table1 
- where calendardate between '01-MAR-2015' and '31-AUG-2015' and mlObservation1 = 'positive'
- )AgressionRecent
- on 
- Table1.a = AgressionRecent.v
- ----------------------------------------------------------------------
- --Past 12 months aggression
-left join
-(
-select distinct(w)
-from 
-(
-SELECT [GateDB_Cris].[dbo].[gate_hunter_aggression_306].BrcId as w, 
-	   [GateDB_Cris].[dbo].[gate_hunter_aggression_306].CN_Doc_ID as documentID,
-	  match,
-	   CONVERT(datetime,[GateDB_Cris].[dbo].[gate].[Date],103) as calendardate,
-	   mlObservation1
-  FROM [GateDB_Cris].[dbo].[gate_hunter_aggression_306]
-left join
-[GateDB_Cris].[dbo].[gate]
- on [GateDB_Cris].[dbo].[gate_hunter_aggression_306].CN_Doc_ID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
- )Table1 
- where calendardate between '01-MAR-2014' and '28-FEB-2015' and mlObservation1 = 'positive'
- )AgressionPast
- on 
- Table1.a = AgressionPast.w 
- -----------------------------------------------------------------------------------------------
-  --Count of Recent aggression
-left join
-(
-select c1,
-	   COUNT(match) as aggressioncountcurrent   
-from 
-			(
-			select *
-			from 
-			(
-									select Table1.BrcId as c1,
-										   match,
-										   documentID,
-										   Table1.src_col,
-										   Table1.src_table,
-										   CONVERT(datetime,[GateDB_Cris].[dbo].[gate].[Date],103) as calendardate    
-									from 
-															(
-															select BrcId,
-															keyObservation1, 
-															match, 
-															cn_doc_id as documentID, 
-															src_table,
-															src_col 
-															from [GateDB_Cris].[dbo].[gate_hunter_aggression_306]
-															where mlObservation1 = 'positive'
-															)Table1											
-									inner join
-											  [GateDB_Cris].[dbo].[gate] 
-									on 
-											  Table1.documentID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
-			)Table2					 
-			where calendardate between '01-MAR-2015' and '31-AUG-2015'
-)Table3
-group by c1
-)AggressionCurrentCount
- on 
- Table1.a = AggressionCurrentCount.c1
+--left join
+--(
+--select  distinct(v)
+--from 
+--(
+--SELECT [GateDB_Cris].[dbo].[gate_hunter_aggression_306].BrcId as v, 
+--	   [GateDB_Cris].[dbo].[gate_hunter_aggression_306].CN_Doc_ID as documentID,
+--	   match,
+--	   CONVERT(datetime,[GateDB_Cris].[dbo].[gate].[Date],103) as calendardate,
+--	   mlObservation1
+--  FROM [GateDB_Cris].[dbo].[gate_hunter_aggression_306]
+--left join
+--[GateDB_Cris].[dbo].[gate]
+-- on [GateDB_Cris].[dbo].[gate_hunter_aggression_306].CN_Doc_ID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
+-- )Table1 
+-- where calendardate between '01-MAR-2015' and '31-AUG-2015' and mlObservation1 = 'positive'
+-- )AgressionRecent
+-- on 
+-- Table1.a = AgressionRecent.v
+-- ----------------------------------------------------------------------
+-- --Past 12 months aggression
+--left join
+--(
+--select distinct(w)
+--from 
+--(
+--SELECT [GateDB_Cris].[dbo].[gate_hunter_aggression_306].BrcId as w, 
+--	   [GateDB_Cris].[dbo].[gate_hunter_aggression_306].CN_Doc_ID as documentID,
+--	  match,
+--	   CONVERT(datetime,[GateDB_Cris].[dbo].[gate].[Date],103) as calendardate,
+--	   mlObservation1
+--  FROM [GateDB_Cris].[dbo].[gate_hunter_aggression_306]
+--left join
+--[GateDB_Cris].[dbo].[gate]
+-- on [GateDB_Cris].[dbo].[gate_hunter_aggression_306].CN_Doc_ID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
+-- )Table1 
+-- where calendardate between '01-MAR-2014' and '28-FEB-2015' and mlObservation1 = 'positive'
+-- )AgressionPast
+-- on 
+-- Table1.a = AgressionPast.w 
+-- -----------------------------------------------------------------------------------------------
+--  --Count of Recent aggression
+--left join
+--(
+--select c1,
+--	   COUNT(match) as aggressioncountcurrent   
+--from 
+--			(
+--			select *
+--			from 
+--			(
+--									select Table1.BrcId as c1,
+--										   match,
+--										   documentID,
+--										   Table1.src_col,
+--										   Table1.src_table,
+--										   CONVERT(datetime,[GateDB_Cris].[dbo].[gate].[Date],103) as calendardate    
+--									from 
+--															(
+--															select BrcId,
+--															keyObservation1, 
+--															match, 
+--															cn_doc_id as documentID, 
+--															src_table,
+--															src_col 
+--															from [GateDB_Cris].[dbo].[gate_hunter_aggression_306]
+--															where mlObservation1 = 'positive'
+--															)Table1											
+--									inner join
+--											  [GateDB_Cris].[dbo].[gate] 
+--									on 
+--											  Table1.documentID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
+--			)Table2					 
+--			where calendardate between '01-MAR-2015' and '31-AUG-2015'
+--)Table3
+--group by c1
+--)AggressionCurrentCount
+-- on 
+-- Table1.a = AggressionCurrentCount.c1
 		
--------------------------------------------------------------------------------------------------
-  --Count of Past aggression
-left join
-(
-select c1,
-	   COUNT(match) as aggressioncountpast
-from 
-			(
-			select *
-			from 
-			(
-									select Table1.BrcId as c1,
-										   match,
-										   documentID,
-										   Table1.src_col,
-										   Table1.src_table,
-										   CONVERT(datetime,[GateDB_Cris].[dbo].[gate].[Date],103) as calendardate  
-									from 
-															(
-															select BrcId,
-															keyObservation1, 
-															match, 
-															cn_doc_id as documentID, 
-															src_table,
-															src_col 
-															from [GateDB_Cris].[dbo].[gate_hunter_aggression_306]
-															where mlObservation1 = 'positive'
-															)Table1											
-									inner join
-											  [GateDB_Cris].[dbo].[gate] 
-									on 
-											  Table1.documentID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
-			)Table2					 
-			where calendardate between '01-MAR-2014' and '28-FEB-2015'
-)Table3
-group by c1
-)AggressionPastCount
+---------------------------------------------------------------------------------------------------
+--  --Count of Past aggression
+--left join
+--(
+--select c1,
+--	   COUNT(match) as aggressioncountpast
+--from 
+--			(
+--			select *
+--			from 
+--			(
+--									select Table1.BrcId as c1,
+--										   match,
+--										   documentID,
+--										   Table1.src_col,
+--										   Table1.src_table,
+--										   CONVERT(datetime,[GateDB_Cris].[dbo].[gate].[Date],103) as calendardate  
+--									from 
+--															(
+--															select BrcId,
+--															keyObservation1, 
+--															match, 
+--															cn_doc_id as documentID, 
+--															src_table,
+--															src_col 
+--															from [GateDB_Cris].[dbo].[gate_hunter_aggression_306]
+--															where mlObservation1 = 'positive'
+--															)Table1											
+--									inner join
+--											  [GateDB_Cris].[dbo].[gate] 
+--									on 
+--											  Table1.documentID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
+--			)Table2					 
+--			where calendardate between '01-MAR-2014' and '28-FEB-2015'
+--)Table3
+--group by c1
+--)AggressionPastCount
 
- on 
+-- on 
  
- Table1.a = AggressionPastCount.c1
+-- Table1.a = AggressionPastCount.c1
  
  --------------------------------------------------------------------------------------
 --- Agitation Current
@@ -1739,42 +2093,49 @@ left join
 (
 select  distinct(x)
 from 
-(
-SELECT [GateDB_Cris].[dbo].[gate_hunter_agitation_306].BrcId as x, 
-	   [GateDB_Cris].[dbo].[gate_hunter_agitation_306].CN_Doc_ID as documentID,
-	   match,
-	   CONVERT(datetime,[GateDB_Cris].[dbo].[gate].[Date],103) as calendardate,
-	   mlObservation1
-  FROM [GateDB_Cris].[dbo].[gate_hunter_agitation_306]
-left join
-[GateDB_Cris].[dbo].[gate]
- on [GateDB_Cris].[dbo].[gate_hunter_agitation_306].CN_Doc_ID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
- )Table1 
- where calendardate between '01-MAR-2015' and '31-AUG-2015' and (mlObservation1 = 'positive' 
-																OR mlObservation1 IS NULL)
+				(
+				SELECT	[GateDB_Cris].dbo.gate_hunter_agitation_suicide_306.BrcId		as x, 
+						[GateDB_Cris].dbo.gate_hunter_agitation_suicide_306.CN_Doc_ID	as documentID,
+						match,
+						CONVERT(datetime,[GateDB_Cris].[dbo].[gate].[Date],103)			as calendardate,
+						mlObservation1,
+						keyObservation1
+				FROM	[GateDB_Cris].dbo.gate_hunter_agitation_suicide_306
+				left join
+						[GateDB_Cris].[dbo].[gate]
+				on		[GateDB_Cris].dbo.gate_hunter_agitation_suicide_306.CN_Doc_ID = 
+						[GateDB_Cris].[dbo].[gate].CN_Doc_ID
+				)Table1 
+ where calendardate between '01-MAR-2015' and '31-AUG-2015' 
+						and (mlObservation1 = 'positive' 
+						 OR	 mlObservation1 IS NULL)
+						AND  keyObservation1 IS NULL
  )AgitationRecent
  on 
  Table1.a = AgitationRecent.x
  ----------------------------------------------------------------------
  --Past 12 months agitation
 left join
-(
-select distinct(y)
-from 
-(
-SELECT [GateDB_Cris].[dbo].[gate_hunter_agitation_306].BrcId as y, 
-	   [GateDB_Cris].[dbo].[gate_hunter_agitation_306].CN_Doc_ID as documentID,
-	  match,
-	   CONVERT(datetime,[GateDB_Cris].[dbo].[gate].[Date],103) as calendardate,
-	   mlObservation1
-  FROM [GateDB_Cris].[dbo].[gate_hunter_agitation_306]
-left join
-[GateDB_Cris].[dbo].[gate]
- on [GateDB_Cris].[dbo].[gate_hunter_agitation_306].CN_Doc_ID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
- )Table1 
- where calendardate between '01-MAR-2014' and '28-FEB-2015' and (mlObservation1 = 'positive' 
-																OR mlObservation1 IS NULL)
- )AgitationPast
+		(
+		select distinct(y)
+		from 
+								(
+								SELECT	[GateDB_Cris].dbo.gate_hunter_agitation_suicide_306.BrcId		as y, 
+										[GateDB_Cris].dbo.gate_hunter_agitation_suicide_306.CN_Doc_ID	as documentID,
+										match,
+										CONVERT(datetime,[GateDB_Cris].[dbo].[gate].[Date],103)			as calendardate,
+										mlObservation1,
+										keyObservation1
+								FROM	[GateDB_Cris].dbo.gate_hunter_agitation_suicide_306
+								left join
+										[GateDB_Cris].[dbo].[gate]
+								on		[GateDB_Cris].dbo.gate_hunter_agitation_suicide_306.CN_Doc_ID = 
+										[GateDB_Cris].[dbo].[gate].CN_Doc_ID
+								)Table1 
+		 where calendardate between '01-MAR-2014' and '28-FEB-2015' and (mlObservation1 = 'positive' 
+																	OR   mlObservation1 IS NULL)
+																	AND keyObservation1 is NULL
+		 )AgitationPast
  on 
  Table1.a = AgitationPast.y
  -----------------------------------------------------------------------------------------------
@@ -1802,9 +2163,10 @@ from
 															cn_doc_id as documentID, 
 															src_table,
 															src_col 
-															from [GateDB_Cris].[dbo].[gate_hunter_agitation_306]
+															from [GateDB_Cris].dbo.gate_hunter_agitation_suicide_306
 															where (mlObservation1 = 'positive' 
-																OR mlObservation1 IS NULL) 
+																OR mlObservation1 IS NULL) AND
+																   keyObservation1 IS NULL
 															)Table1											
 									inner join
 											  [GateDB_Cris].[dbo].[gate] 
@@ -1843,9 +2205,10 @@ from
 															cn_doc_id as documentID, 
 															src_table,
 															src_col 
-															from [GateDB_Cris].[dbo].[gate_hunter_agitation_306]
+															from [GateDB_Cris].dbo.gate_hunter_agitation_suicide_306
 															where (mlObservation1 = 'positive' 
-																OR mlObservation1 IS NULL)
+																OR mlObservation1 IS NULL) AND
+																   keyObservation1 IS NULL
 															)Table1											
 									inner join
 											  [GateDB_Cris].[dbo].[gate] 
@@ -1866,43 +2229,51 @@ group by c1
 -- There are few instances of positive. Which is why there are not that many instances of energy. 
 
 left join
-(
-select  distinct(z)
-from 
-(
-SELECT [GateDB_Cris].[dbo].[gate_hunter_energy306].BrcId as z, 
-	   [GateDB_Cris].[dbo].[gate_hunter_energy306].CN_Doc_ID as documentID,
-	   match,
-	   CONVERT(datetime,[GateDB_Cris].[dbo].[gate].[Date],103) as calendardate,
-	   mlObservation1
-  FROM [GateDB_Cris].[dbo].[gate_hunter_energy306]
-left join
-[GateDB_Cris].[dbo].[gate]
- on [GateDB_Cris].[dbo].[gate_hunter_energy306].CN_Doc_ID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
- )Table1 
- where calendardate between '01-MAR-2015' and '31-AUG-2015' and mlObservation1 = 'positive'
- )EnergyRecent
+		(
+		select  distinct(z)
+		from 
+							(
+							SELECT	[GateDB_Cris].dbo.gate_hunter_energy_suicide_306.BrcId		as z, 
+									[GateDB_Cris].dbo.gate_hunter_energy_suicide_306.CN_Doc_ID	as documentID,
+									match,
+									CONVERT(datetime,[GateDB_Cris].[dbo].[gate].[Date],103)		as calendardate,
+									mlObservation1,
+									keyObservation1
+							FROM	[GateDB_Cris].dbo.gate_hunter_energy_suicide_306
+							left join
+									[GateDB_Cris].[dbo].[gate]
+							on		[GateDB_Cris].dbo.gate_hunter_energy_suicide_306.CN_Doc_ID = 
+									[GateDB_Cris].[dbo].[gate].CN_Doc_ID
+							)Table1 
+		 where	calendardate between '01-MAR-2015' and '31-AUG-2015' and 
+				mlObservation1 = 'positive' and
+				keyObservation1 is NULL
+		 )EnergyRecent
  on 
  Table1.a = EnergyRecent.z
  ----------------------------------------------------------------------
  --Past 12 months energy
 left join
-(
-select distinct(a1)
-from 
-(
-SELECT [GateDB_Cris].[dbo].[gate_hunter_energy306].BrcId as a1, 
-	   [GateDB_Cris].[dbo].[gate_hunter_energy306].CN_Doc_ID as documentID,
-	  match,
-	   CONVERT(datetime,[GateDB_Cris].[dbo].[gate].[Date],103) as calendardate,
-	   mlObservation1
-  FROM [GateDB_Cris].[dbo].[gate_hunter_energy306]
-left join
-[GateDB_Cris].[dbo].[gate]
- on [GateDB_Cris].[dbo].[gate_hunter_energy306].CN_Doc_ID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
- )Table1 
- where calendardate between '01-MAR-2014' and '28-FEB-2015' and mlObservation1 = 'positive'
- )EnergyPast
+		(
+		select distinct(a1)
+		from 
+						(
+						SELECT		[GateDB_Cris].dbo.gate_hunter_energy_suicide_306.BrcId			as a1, 
+									[GateDB_Cris].dbo.gate_hunter_energy_suicide_306.CN_Doc_ID		as documentID,
+									match,
+									CONVERT(datetime,[GateDB_Cris].[dbo].[gate].[Date],103)			as calendardate,
+									mlObservation1,
+									keyObservation1
+						FROM		[GateDB_Cris].dbo.gate_hunter_energy_suicide_306
+						left join
+									[GateDB_Cris].[dbo].[gate]
+						on			[GateDB_Cris].[dbo].[gate_hunter_energy_suicide_306].CN_Doc_ID = 
+									[GateDB_Cris].[dbo].[gate].CN_Doc_ID
+						)Table1 
+		where	calendardate between '01-MAR-2014' and '28-FEB-2015' and 
+				mlObservation1 = 'positive' AND
+				keyObservation1 IS NULL
+		)EnergyPast
  on 
  Table1.a = EnergyPast.a1
  -----------------------------------------------------------------------------------------------
@@ -1930,8 +2301,9 @@ from
 															cn_doc_id as documentID, 
 															src_table,
 															src_col 
-															from [GateDB_Cris].[dbo].[gate_hunter_energy306]
-															where mlObservation1 = 'positive'
+															from [GateDB_Cris].dbo.gate_hunter_energy_suicide_306
+															where	mlObservation1 = 'positive' AND
+																	keyObservation1 IS NULL
 															)Table1											
 									inner join
 											  [GateDB_Cris].[dbo].[gate] 
@@ -1970,8 +2342,9 @@ from
 															cn_doc_id as documentID, 
 															src_table,
 															src_col 
-															from [GateDB_Cris].[dbo].[gate_hunter_energy306]
-															where mlObservation1 = 'positive'
+															from [GateDB_Cris].dbo.gate_hunter_energy_suicide_306
+															where	mlObservation1 = 'positive' AND
+																	keyObservation1 IS NULL
 															)Table1											
 									inner join
 											  [GateDB_Cris].[dbo].[gate] 
@@ -1991,45 +2364,51 @@ group by c1
 -- Code amended to pull in NULL and positive observations. 
 
 left join
-(
-select  distinct(b1)
-from 
-(
-SELECT [GateDB_Cris].[dbo].[gate_hunter_delusion_306].BrcId as b1, 
-	   [GateDB_Cris].[dbo].[gate_hunter_delusion_306].CN_Doc_ID as documentID,
-	   match,
-	   CONVERT(datetime,[GateDB_Cris].[dbo].[gate].[Date],103) as calendardate,
-	   mlObservation1
-  FROM [GateDB_Cris].[dbo].[gate_hunter_delusion_306]
-left join
-[GateDB_Cris].[dbo].[gate]
- on [GateDB_Cris].[dbo].[gate_hunter_delusion_306].CN_Doc_ID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
- )Table1 
- where calendardate between '01-MAR-2015' and '31-AUG-2015' and (mlObservation1 = 'positive' 
-																OR mlObservation1 IS NULL) 
- )DelusionRecent
+			(
+			select  distinct(b1)
+			from 
+							(
+							SELECT		[GateDB_Cris].dbo.gate_hunter_delusion_suicide_306.BrcId		as b1, 
+										[GateDB_Cris].dbo.gate_hunter_delusion_suicide_306.CN_Doc_ID	as documentID,
+										match,
+										CONVERT(datetime,[GateDB_Cris].[dbo].[gate].[Date],103)			as calendardate,
+										mlObservation1,
+										keyObservation1
+							FROM		[GateDB_Cris].dbo.gate_hunter_delusion_suicide_306
+							left join
+										[GateDB_Cris].[dbo].[gate]
+							on			[GateDB_Cris].dbo.gate_hunter_delusion_suicide_306.CN_Doc_ID = 
+										[GateDB_Cris].[dbo].[gate].CN_Doc_ID
+							)Table1 
+			 where calendardate between '01-MAR-2015' and '31-AUG-2015' and (mlObservation1 = 'positive' 
+																			OR mlObservation1 IS NULL)
+					and keyObservation1 is null
+			 )DelusionRecent
  on 
  Table1.a = DelusionRecent.b1
  ----------------------------------------------------------------------
  --Past 12 months delusion
 left join
-(
-select distinct(d1)
-from 
-(
-SELECT [GateDB_Cris].[dbo].[gate_hunter_delusion_306].BrcId as d1, 
-	   [GateDB_Cris].[dbo].[gate_hunter_delusion_306].CN_Doc_ID as documentID,
-	  match,
-	   CONVERT(datetime,[GateDB_Cris].[dbo].[gate].[Date],103) as calendardate,
-	   mlObservation1
-  FROM [GateDB_Cris].[dbo].[gate_hunter_delusion_306]
-left join
-[GateDB_Cris].[dbo].[gate]
- on [GateDB_Cris].[dbo].[gate_hunter_delusion_306].CN_Doc_ID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
- )Table1 
- where calendardate between '01-MAR-2014' and '28-FEB-2015' and (mlObservation1 = 'positive' 
-																OR mlObservation1 IS NULL) 
- )DelusionPast
+		(
+		select distinct(d1)
+		from 
+							(
+							SELECT	[GateDB_Cris].dbo.gate_hunter_delusion_suicide_306.BrcId			as d1, 
+									[GateDB_Cris].dbo.gate_hunter_delusion_suicide_306.CN_Doc_ID		as documentID,
+									match,
+									CONVERT(datetime,[GateDB_Cris].[dbo].[gate].[Date],103)				as calendardate,
+									mlObservation1,
+									keyObservation1
+							FROM	[GateDB_Cris].dbo.gate_hunter_delusion_suicide_306
+							left join
+									[GateDB_Cris].[dbo].[gate]
+							on		[GateDB_Cris].dbo.gate_hunter_delusion_suicide_306.CN_Doc_ID = 
+									[GateDB_Cris].[dbo].[gate].CN_Doc_ID
+							)Table1 
+		 where calendardate between '01-MAR-2014' and '28-FEB-2015' and (mlObservation1 = 'positive' 
+																	OR   mlObservation1 IS NULL)
+							and keyObservation1 is null
+		 )DelusionPast
  on 
  Table1.a = DelusionPast.d1
  -----------------------------------------------------------------------------------------------
@@ -2057,9 +2436,10 @@ from
 															cn_doc_id as documentID, 
 															src_table,
 															src_col 
-															from [GateDB_Cris].[dbo].[gate_hunter_delusion_306]
+															from [GateDB_Cris].dbo.gate_hunter_delusion_suicide_306
 															where (mlObservation1 = 'positive' 
-																OR mlObservation1 IS NULL) 
+																OR mlObservation1 IS NULL) and
+																keyObservation1 is null
 															)Table1											
 									inner join
 											  [GateDB_Cris].[dbo].[gate] 
@@ -2098,9 +2478,10 @@ from
 															cn_doc_id as documentID, 
 															src_table,
 															src_col 
-															from [GateDB_Cris].[dbo].[gate_hunter_delusion_306]
+															from [GateDB_Cris].dbo.gate_hunter_delusion_suicide_306
 															where (mlObservation1 = 'positive' 
-																OR mlObservation1 IS NULL) 
+																OR mlObservation1 IS NULL) and
+																keyObservation1 is null
 															)Table1											
 									inner join
 											  [GateDB_Cris].[dbo].[gate] 
@@ -2119,43 +2500,51 @@ group by c1
  -------------------------------------------------------------------------------------
 -- Appetite Current
 left join
-(
-select  distinct(e1)
-from 
-(
-SELECT [GateDB_Cris].[dbo].[gate_hunter_appetite_306].BrcId as e1, 
-	   [GateDB_Cris].[dbo].[gate_hunter_appetite_306].CN_Doc_ID as documentID,
-	   match,
-	   CONVERT(datetime,[GateDB_Cris].[dbo].[gate].[Date],103) as calendardate,
-	   mlObservation1
-  FROM [GateDB_Cris].[dbo].[gate_hunter_appetite_306]
-left join
-[GateDB_Cris].[dbo].[gate]
- on [GateDB_Cris].[dbo].[gate_hunter_appetite_306].CN_Doc_ID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
- )Table1 
- where calendardate between '01-MAR-2015' and '31-AUG-2015' and mlObservation1 = 'negative'
- )AppetiteRecent
+		(
+		select  distinct(e1)
+		from 
+							(
+							SELECT	[GateDB_Cris].dbo.gate_hunter_appetite_suicide_306.BrcId		as e1, 
+									[GateDB_Cris].dbo.gate_hunter_appetite_suicide_306.CN_Doc_ID	as documentID,
+									match,
+									CONVERT(datetime,[GateDB_Cris].[dbo].[gate].[Date],103)			as calendardate,
+									mlObservation1,
+									keyObservation1
+							FROM	[GateDB_Cris].dbo.gate_hunter_appetite_suicide_306
+							left join
+									[GateDB_Cris].[dbo].[gate]
+							on		[GateDB_Cris].dbo.gate_hunter_appetite_suicide_306.CN_Doc_ID = 
+									[GateDB_Cris].[dbo].[gate].CN_Doc_ID
+							)Table1 
+		 where	calendardate between '01-MAR-2015' and '31-AUG-2015' and 
+				mlObservation1 = 'negative' and
+				keyObservation1	is null
+		 )AppetiteRecent
  on 
  Table1.a = AppetiteRecent.e1
  ----------------------------------------------------------------------
  --Past 12 months appetite
 left join
-(
-select distinct(f1)
-from 
-(
-SELECT [GateDB_Cris].[dbo].[gate_hunter_appetite_306].BrcId as f1, 
-	   [GateDB_Cris].[dbo].[gate_hunter_appetite_306].CN_Doc_ID as documentID,
-	  match,
-	   CONVERT(datetime,[GateDB_Cris].[dbo].[gate].[Date],103) as calendardate,
-	   mlObservation1
-  FROM [GateDB_Cris].[dbo].[gate_hunter_appetite_306]
-left join
-[GateDB_Cris].[dbo].[gate]
- on [GateDB_Cris].[dbo].[gate_hunter_appetite_306].CN_Doc_ID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
- )Table1 
- where calendardate between '01-MAR-2014' and '28-FEB-2015' and mlObservation1 = 'negative'
- )AppetitePast
+			(
+			select distinct(f1)
+			from 
+									(
+									SELECT	[GateDB_Cris].dbo.gate_hunter_appetite_suicide_306.BrcId		as f1, 
+											[GateDB_Cris].dbo.gate_hunter_appetite_suicide_306.CN_Doc_ID	as documentID,
+											match,
+											CONVERT(datetime,[GateDB_Cris].[dbo].[gate].[Date],103)			as calendardate,
+											mlObservation1,
+											keyObservation1
+									FROM	[GateDB_Cris].dbo.gate_hunter_appetite_suicide_306
+									left join
+											[GateDB_Cris].[dbo].[gate]
+									on		[GateDB_Cris].dbo.gate_hunter_appetite_suicide_306.CN_Doc_ID = 
+											[GateDB_Cris].[dbo].[gate].CN_Doc_ID
+									)Table1 
+			 where	calendardate between '01-MAR-2014' and '28-FEB-2015' and 
+					mlObservation1 = 'negative' AND
+					keyObservation1 IS NULL
+			 )AppetitePast
  on 
  Table1.a = AppetitePast.f1
  -----------------------------------------------------------------------------------------------
@@ -2183,8 +2572,9 @@ from
 															cn_doc_id as documentID, 
 															src_table,
 															src_col 
-															from [GateDB_Cris].[dbo].[gate_hunter_appetite_306]
-															where mlObservation1 = 'negative'
+															from [GateDB_Cris].dbo.gate_hunter_appetite_suicide_306
+															where	mlObservation1 = 'negative' AND
+																	keyObservation1 is NULL
 															)Table1											
 									inner join
 											  [GateDB_Cris].[dbo].[gate] 
@@ -2223,8 +2613,9 @@ from
 															cn_doc_id as documentID, 
 															src_table,
 															src_col 
-															from [GateDB_Cris].[dbo].[gate_hunter_appetite_306]
-															where mlObservation1 = 'negative'
+															from [GateDB_Cris].dbo.gate_hunter_appetite_suicide_306
+															where	mlObservation1 = 'negative' AND
+																	keyObservation1 is NULL
 															)Table1											
 									inner join
 											  [GateDB_Cris].[dbo].[gate] 
@@ -2243,42 +2634,50 @@ group by c1
 -- social withdrawal symptoms current
 left join
 (
-select  distinct(g1)
-from 
-(
-SELECT [GateDB_Cris].[dbo].[gate_hunter_socialwithdraw_306].BrcId as g1, 
-	   [GateDB_Cris].[dbo].[gate_hunter_socialwithdraw_306].CN_Doc_ID as documentID,
-	   match,
-	   CONVERT(datetime,[GateDB_Cris].[dbo].[gate].[Date],103) as calendardate,
-	   mlObservation1
-  FROM [GateDB_Cris].[dbo].[gate_hunter_socialwithdraw_306]
-left join
-[GateDB_Cris].[dbo].[gate]
- on [GateDB_Cris].[dbo].[gate_hunter_socialwithdraw_306].CN_Doc_ID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
- )Table1 
- where calendardate between '01-MAR-2015' and '31-AUG-2015' and mlObservation1 = 'positive'
- )SocWitRecent
+		select  distinct(g1)
+		from 
+								(
+								SELECT	[GateDB_Cris].dbo.gate_hunter_socialwithdraw_suicide_306.BrcId		as g1, 
+										[GateDB_Cris].dbo.gate_hunter_socialwithdraw_suicide_306.CN_Doc_ID	as documentID,
+										match,
+										CONVERT(datetime,[GateDB_Cris].[dbo].[gate].[Date],103)				as calendardate,
+										mlObservation1,
+										keyObservation1
+								FROM	[GateDB_Cris].dbo.gate_hunter_socialwithdraw_suicide_306
+								left join
+										[GateDB_Cris].[dbo].[gate]
+								on		[GateDB_Cris].dbo.gate_hunter_socialwithdraw_suicide_306.CN_Doc_ID = 
+										[GateDB_Cris].[dbo].[gate].CN_Doc_ID
+								)Table1 
+		where	calendardate between '01-MAR-2015' and '31-AUG-2015' and 
+				mlObservation1 = 'positive' AND
+				keyObservation1 IS NULL
+)SocWitRecent
  on 
  Table1.a = SocWitRecent.g1
  ----------------------------------------------------------------------
  --Past 12 months social withdrawal
 left join
 (
-select distinct(h1)
-from 
-(
-SELECT [GateDB_Cris].[dbo].[gate_hunter_socialwithdraw_306].BrcId as h1, 
-	   [GateDB_Cris].[dbo].[gate_hunter_socialwithdraw_306].CN_Doc_ID as documentID,
-	  match,
-	   CONVERT(datetime,[GateDB_Cris].[dbo].[gate].[Date],103) as calendardate,
-	   mlObservation1
-  FROM [GateDB_Cris].[dbo].[gate_hunter_socialwithdraw_306]
-left join
-[GateDB_Cris].[dbo].[gate]
- on [GateDB_Cris].[dbo].[gate_hunter_socialwithdraw_306].CN_Doc_ID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
- )Table1 
- where calendardate between '01-MAR-2014' and '28-FEB-2015' and mlObservation1 = 'positive'
- )SocWitPast
+			select distinct(h1)
+			from 
+							(
+							SELECT	[GateDB_Cris].dbo.gate_hunter_socialwithdraw_suicide_306.BrcId		as h1, 
+									[GateDB_Cris].dbo.gate_hunter_socialwithdraw_suicide_306.CN_Doc_ID	as documentID,
+									match,
+									CONVERT(datetime,[GateDB_Cris].[dbo].[gate].[Date],103)				as calendardate,
+									mlObservation1,
+									keyObservation1
+							FROM	[GateDB_Cris].dbo.gate_hunter_socialwithdraw_suicide_306
+							left join
+									[GateDB_Cris].[dbo].[gate]
+							on		[GateDB_Cris].dbo.gate_hunter_socialwithdraw_suicide_306.CN_Doc_ID = 
+									[GateDB_Cris].[dbo].[gate].CN_Doc_ID
+							)Table1 
+			 where	calendardate between '01-MAR-2014' and '28-FEB-2015' and 
+					mlObservation1 = 'positive' AND
+					keyObservation1 IS NULL
+)SocWitPast
  on 
  Table1.a = SocWitPast.h1
  -----------------------------------------------------------------------------------------------
@@ -2306,8 +2705,9 @@ from
 															cn_doc_id as documentID, 
 															src_table,
 															src_col 
-															from [GateDB_Cris].[dbo].[gate_hunter_socialwithdraw_306]
-															where mlObservation1 = 'positive'
+															from [GateDB_Cris].dbo.gate_hunter_socialwithdraw_suicide_306
+															where mlObservation1 = 'positive' AND
+															keyObservation1 IS NULL
 															)Table1											
 									inner join
 											  [GateDB_Cris].[dbo].[gate] 
@@ -2346,8 +2746,9 @@ from
 															cn_doc_id as documentID, 
 															src_table,
 															src_col 
-															from [GateDB_Cris].[dbo].[gate_hunter_socialwithdraw_306]
-															where mlObservation1 = 'positive'
+															from [GateDB_Cris].dbo.gate_hunter_socialwithdraw_suicide_306
+															where mlObservation1 = 'positive' AND
+															keyObservation1 IS NULL
 															)Table1											
 									inner join
 											  [GateDB_Cris].[dbo].[gate] 
@@ -2367,20 +2768,25 @@ group by c1
 
 left join
 (
-select  distinct(i1)
-from 
-(
-SELECT [GateDB_Cris].[dbo].[gate_hunter_concentration306].BrcId as i1, 
-	   [GateDB_Cris].[dbo].[gate_hunter_concentration306].CN_Doc_ID as documentID,
-	   match,
-	   CONVERT(datetime,[GateDB_Cris].[dbo].[gate].[Date],103) as calendardate,
-	   mlObservation1
-  FROM [GateDB_Cris].[dbo].[gate_hunter_concentration306]
-left join
-[GateDB_Cris].[dbo].[gate]
- on [GateDB_Cris].[dbo].[gate_hunter_concentration306].CN_Doc_ID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
- )Table1 
- where calendardate between '01-MAR-2015' and '31-AUG-2015' and mlObservation1 = 'positive'
+			select  distinct(i1)
+			from 
+									(
+									SELECT		[GateDB_Cris].dbo.gate_hunter_concentration_suicide_306.BrcId		as i1, 
+												[GateDB_Cris].dbo.gate_hunter_concentration_suicide_306.CN_Doc_ID	as documentID,
+												match,
+												CONVERT(datetime,[GateDB_Cris].[dbo].[gate].[Date],103)			as calendardate,
+												mlObservation1,
+												keyObservation1
+									FROM		[GateDB_Cris].dbo.gate_hunter_concentration_suicide_306
+									left join
+												[GateDB_Cris].[dbo].[gate]
+									on			[GateDB_Cris].dbo.gate_hunter_concentration_suicide_306.CN_Doc_ID = 
+												[GateDB_Cris].[dbo].[gate].CN_Doc_ID
+									)Table1 
+			 where	calendardate between '01-MAR-2015' and '31-AUG-2015' and 
+					mlObservation1 = 'positive' AND
+					keyObservation1 IS NULL
+					
  )concentrationRecent
  on 
  Table1.a = concentrationRecent.i1
@@ -2388,20 +2794,24 @@ left join
  --Past 12 months low concentration
 left join
 (
-select distinct(j1)
-from 
-(
-SELECT [GateDB_Cris].[dbo].[gate_hunter_concentration306].BrcId as j1, 
-	   [GateDB_Cris].[dbo].[gate_hunter_concentration306].CN_Doc_ID as documentID,
-	  match,
-	   CONVERT(datetime,[GateDB_Cris].[dbo].[gate].[Date],103) as calendardate,
-	   mlObservation1
-  FROM [GateDB_Cris].[dbo].[gate_hunter_concentration306]
-left join
-[GateDB_Cris].[dbo].[gate]
- on [GateDB_Cris].[dbo].[gate_hunter_concentration306].CN_Doc_ID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
- )Table1 
- where calendardate between '01-MAR-2014' and '28-FEB-2015' and mlObservation1 = 'positive'
+			select distinct(j1)
+			from 
+								(
+								SELECT		[GateDB_Cris].dbo.gate_hunter_concentration_suicide_306.BrcId		as j1, 
+											[GateDB_Cris].dbo.gate_hunter_concentration_suicide_306.CN_Doc_ID	as documentID,
+											match,
+											CONVERT(datetime,[GateDB_Cris].[dbo].[gate].[Date],103)				as calendardate,
+											mlObservation1,
+											keyObservation1
+								FROM		[GateDB_Cris].dbo.gate_hunter_concentration_suicide_306
+								left join
+											[GateDB_Cris].[dbo].[gate]
+								on			[GateDB_Cris].dbo.gate_hunter_concentration_suicide_306.CN_Doc_ID = 
+											[GateDB_Cris].[dbo].[gate].CN_Doc_ID
+								)Table1 
+			 where	calendardate between '01-MAR-2014' and '28-FEB-2015' and 
+					mlObservation1 = 'positive' and
+					keyObservation1 is null
  )concentrationPast
  on 
  Table1.a = concentrationPast.j1
@@ -2430,8 +2840,9 @@ from
 															cn_doc_id as documentID, 
 															src_table,
 															src_col 
-															from [GateDB_Cris].[dbo].[gate_hunter_concentration306]
-															where mlObservation1 = 'positive'
+															from [GateDB_Cris].dbo.gate_hunter_concentration_suicide_306
+															where	mlObservation1 = 'positive' and
+																	keyObservation1 is null
 															)Table1											
 									inner join
 											  [GateDB_Cris].[dbo].[gate] 
@@ -2470,8 +2881,9 @@ from
 															cn_doc_id as documentID, 
 															src_table,
 															src_col 
-															from [GateDB_Cris].[dbo].[gate_hunter_concentration306]
-															where mlObservation1 = 'positive'
+															from [GateDB_Cris].dbo.gate_hunter_concentration_suicide_306
+															where	mlObservation1 = 'positive' and
+																	keyObservation1 is null
 															)Table1											
 									inner join
 											  [GateDB_Cris].[dbo].[gate] 
@@ -2490,20 +2902,24 @@ group by c1
 
 left join
 (
-select  distinct(k1)
-from 
-(
-SELECT [GateDB_Cris].[dbo].[gate_hunter_irritable306].BrcId as k1, 
-	   [GateDB_Cris].[dbo].[gate_hunter_irritable306].CN_Doc_ID as documentID,
-	   match,
-	   CONVERT(datetime,[GateDB_Cris].[dbo].[gate].[Date],103) as calendardate,
-	   mlObservation1
-  FROM [GateDB_Cris].[dbo].[gate_hunter_irritable306]
-left join
-[GateDB_Cris].[dbo].[gate]
- on [GateDB_Cris].[dbo].[gate_hunter_irritable306].CN_Doc_ID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
- )Table1 
- where calendardate between '01-MAR-2015' and '31-AUG-2015' AND mlObservation1 = 'positive'
+			select  distinct(k1)
+			from 
+								(
+								SELECT	[GateDB_Cris].dbo.gate_hunter_irritable_suicide_306.BrcId		as k1, 
+										[GateDB_Cris].dbo.gate_hunter_irritable_suicide_306.CN_Doc_ID	as documentID,
+										match,
+										CONVERT(datetime,[GateDB_Cris].[dbo].[gate].[Date],103)			as calendardate,
+										mlObservation1,
+										keyObservation1
+								FROM	[GateDB_Cris].dbo.gate_hunter_irritable_suicide_306
+								left join
+										[GateDB_Cris].[dbo].[gate]
+								on		[GateDB_Cris].dbo.gate_hunter_irritable_suicide_306.CN_Doc_ID = 
+										[GateDB_Cris].[dbo].[gate].CN_Doc_ID
+								)Table1 
+			 where	calendardate between '01-MAR-2015' and '31-AUG-2015' AND 
+					mlObservation1 = 'positive' and
+					keyObservation1 is null
  )IrritableRecent
  on 
  Table1.a = IrritableRecent.k1
@@ -2513,19 +2929,23 @@ left join
 (
 select distinct(l1)
 from 
-(
-SELECT [GateDB_Cris].[dbo].[gate_hunter_irritable306].BrcId as l1, 
-	   [GateDB_Cris].[dbo].[gate_hunter_irritable306].CN_Doc_ID as documentID,
-	  match,
-	   CONVERT(datetime,[GateDB_Cris].[dbo].[gate].[Date],103) as calendardate,
-	   mlObservation1
-  FROM [GateDB_Cris].[dbo].[gate_hunter_irritable306]
-left join
-[GateDB_Cris].[dbo].[gate]
- on [GateDB_Cris].[dbo].[gate_hunter_irritable306].CN_Doc_ID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
- )Table1 
- where calendardate between '01-MAR-2014' and '28-FEB-2015' AND mlObservation1 = 'positive'
- )IrritablePast
+					(
+					SELECT	[GateDB_Cris].dbo.gate_hunter_irritable_suicide_306.BrcId			as l1, 
+							[GateDB_Cris].dbo.gate_hunter_irritable_suicide_306.CN_Doc_ID		as documentID,
+							match,
+							CONVERT(datetime,[GateDB_Cris].[dbo].[gate].[Date],103)				as calendardate,
+							mlObservation1,
+							keyObservation1
+					FROM	[GateDB_Cris].dbo.gate_hunter_irritable_suicide_306
+					left join
+							[GateDB_Cris].[dbo].[gate]
+					on		[GateDB_Cris].dbo.gate_hunter_irritable_suicide_306.CN_Doc_ID = 
+							[GateDB_Cris].[dbo].[gate].CN_Doc_ID
+					)Table1 
+where	calendardate between '01-MAR-2014' and '28-FEB-2015' AND 
+		mlObservation1 = 'positive' and
+		keyObservation1 is null
+)IrritablePast
  on 
  Table1.a = IrritablePast.l1
  -----------------------------------------------------------------------------------------------
@@ -2553,8 +2973,9 @@ from
 															cn_doc_id as documentID, 
 															src_table,
 															src_col 
-															from [GateDB_Cris].[dbo].[gate_hunter_irritable306]
-															where mlObservation1 = 'positive'
+															from [GateDB_Cris].dbo.gate_hunter_irritable_suicide_306
+															where	mlObservation1 = 'positive' and
+																	keyObservation1 is null
 															)Table1											
 									inner join
 											  [GateDB_Cris].[dbo].[gate] 
@@ -2593,8 +3014,9 @@ from
 															cn_doc_id as documentID, 
 															src_table,
 															src_col 
-															from [GateDB_Cris].[dbo].[gate_hunter_irritable306]
-															where mlObservation1 = 'positive'
+															from [GateDB_Cris].dbo.gate_hunter_irritable_suicide_306
+															where	mlObservation1 = 'positive' and
+																	keyObservation1 is null
 															)Table1											
 									inner join
 											  [GateDB_Cris].[dbo].[gate] 
@@ -2614,20 +3036,24 @@ group by c1
 
 left join
 (
-select  distinct(q1)
-from 
-(
-SELECT [GateDB_Cris].[dbo].[gate_hunter_helpless306].BrcId as q1, 
-	   [GateDB_Cris].[dbo].[gate_hunter_helpless306].CN_Doc_ID as documentID,
-	   match,
-	   CONVERT(datetime,[GateDB_Cris].[dbo].[gate].[Date],103) as calendardate,
-	   mlObservation1
-  FROM [GateDB_Cris].[dbo].[gate_hunter_helpless306]
-left join
-[GateDB_Cris].[dbo].[gate]
- on [GateDB_Cris].[dbo].[gate_hunter_helpless306].CN_Doc_ID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
- )Table1 
- where calendardate between '01-MAR-2015' and '31-AUG-2015' and mlObservation1 = 'positive'
+		select  distinct(q1)
+		from 
+							(
+							SELECT		[GateDB_Cris].dbo.gate_hunter_helpless_suicide_306.BrcId		as q1, 
+										[GateDB_Cris].dbo.gate_hunter_helpless_suicide_306.CN_Doc_ID	as documentID,
+										match,
+										CONVERT(datetime,[GateDB_Cris].[dbo].[gate].[Date],103)			as calendardate,
+										mlObservation1,
+										keyObservation1
+							FROM		[GateDB_Cris].dbo.gate_hunter_helpless_suicide_306
+							left join
+										[GateDB_Cris].[dbo].[gate]
+							on			[GateDB_Cris].dbo.gate_hunter_helpless_suicide_306.CN_Doc_ID = 
+										[GateDB_Cris].[dbo].[gate].CN_Doc_ID
+							)Table1 
+		 where	calendardate between '01-MAR-2015' and '31-AUG-2015' and		
+				mlObservation1 = 'positive' and
+				keyObservation1 is null
  )helplessRecent
  on 
  Table1.a = helplessRecent.q1
@@ -2635,20 +3061,24 @@ left join
  --Past 12 months helpless
 left join
 (
-select distinct(r1)
-from 
-(
-SELECT [GateDB_Cris].[dbo].[gate_hunter_helpless306].BrcId as r1, 
-	   [GateDB_Cris].[dbo].[gate_hunter_helpless306].CN_Doc_ID as documentID,
-	  match,
-	   CONVERT(datetime,[GateDB_Cris].[dbo].[gate].[Date],103) as calendardate,
-	   mlObservation1
-  FROM [GateDB_Cris].[dbo].[gate_hunter_helpless306]
-left join
-[GateDB_Cris].[dbo].[gate]
- on [GateDB_Cris].[dbo].[gate_hunter_helpless306].CN_Doc_ID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
- )Table1 
- where calendardate between '01-MAR-2014' and '28-FEB-2015' and mlObservation1 = 'positive'
+			select distinct(r1)
+			from 
+								(
+								SELECT	[GateDB_Cris].dbo.gate_hunter_helpless_suicide_306.BrcId		as r1, 
+										[GateDB_Cris].dbo.gate_hunter_helpless_suicide_306.CN_Doc_ID	as documentID,
+										match,
+										CONVERT(datetime,[GateDB_Cris].[dbo].[gate].[Date],103)			as calendardate,
+										mlObservation1,
+										keyObservation1
+								FROM	[GateDB_Cris].dbo.gate_hunter_helpless_suicide_306
+								left join
+										[GateDB_Cris].[dbo].[gate]
+								on		[GateDB_Cris].dbo.gate_hunter_helpless_suicide_306.CN_Doc_ID = 
+										[GateDB_Cris].[dbo].[gate].CN_Doc_ID
+								)Table1 
+			 where	calendardate between '01-MAR-2014' and '28-FEB-2015' and 
+					mlObservation1 = 'positive' and
+					keyObservation1 is null
  )helplessPast
  on 
  Table1.a = helplessPast.r1
@@ -2677,8 +3107,9 @@ from
 															cn_doc_id as documentID, 
 															src_table,
 															src_col 
-															from [GateDB_Cris].[dbo].[gate_hunter_helpless306]
-															where mlObservation1 = 'positive'
+															from [GateDB_Cris].dbo.gate_hunter_helpless_suicide_306
+															where	mlObservation1 = 'positive' and
+																	keyObservation1 is NULL
 															)Table1											
 									inner join
 											  [GateDB_Cris].[dbo].[gate] 
@@ -2717,8 +3148,9 @@ from
 															cn_doc_id as documentID, 
 															src_table,
 															src_col 
-															from [GateDB_Cris].[dbo].[gate_hunter_helpless306]
-															where mlObservation1 = 'positive'
+															from [GateDB_Cris].dbo.gate_hunter_helpless_suicide_306
+															where	mlObservation1 = 'positive' and
+																	keyObservation1 is NULL
 															)Table1											
 									inner join
 											  [GateDB_Cris].[dbo].[gate] 
@@ -2738,21 +3170,25 @@ group by c1
 -- LowMood current
 
 left join
-(
-select  distinct(q1)
-from 
-(
-SELECT [GateDB_Cris].[dbo].[gate_hunter_low_mood_306].BrcId as q1, 
-	   [GateDB_Cris].[dbo].[gate_hunter_low_mood_306].CN_Doc_ID as documentID,
-	   match,
-	   CONVERT(datetime,[GateDB_Cris].[dbo].[gate].[Date],103) as calendardate,
-	   mlObservation1
-  FROM [GateDB_Cris].[dbo].[gate_hunter_low_mood_306]
-left join
-[GateDB_Cris].[dbo].[gate]
- on [GateDB_Cris].[dbo].[gate_hunter_low_mood_306].CN_Doc_ID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
- )Table1 
- where calendardate between '01-MAR-2015' and '31-AUG-2015' and mlObservation1 = 'positive'
+			(
+			select  distinct(q1)
+			from 
+								(
+								SELECT		[GateDB_Cris].dbo.gate_hunter_low_mood_suicide_306.BrcId		as q1, 
+											[GateDB_Cris].dbo.gate_hunter_low_mood_suicide_306.CN_Doc_ID	as documentID,
+											match,
+											CONVERT(datetime,[GateDB_Cris].[dbo].[gate].[Date],103)			as calendardate,
+											mlObservation1,
+											keyObservation1
+								FROM		[GateDB_Cris].dbo.gate_hunter_low_mood_suicide_306
+								left join
+											[GateDB_Cris].[dbo].[gate]
+								on			[GateDB_Cris].dbo.gate_hunter_low_mood_suicide_306.CN_Doc_ID = 
+											[GateDB_Cris].[dbo].[gate].CN_Doc_ID
+								)Table1 
+			 where	calendardate between '01-MAR-2015' and '31-AUG-2015' and 
+					mlObservation1 = 'positive' AND
+					keyObservation1 is null
  )LowMoodRecent
  on 
  Table1.a = LowMoodRecent.q1
@@ -2760,20 +3196,24 @@ left join
  --Past 12 months LowMood
 left join
 (
-select distinct(r1)
-from 
-(
-SELECT [GateDB_Cris].[dbo].[gate_hunter_low_mood_306].BrcId as r1, 
-	   [GateDB_Cris].[dbo].[gate_hunter_low_mood_306].CN_Doc_ID as documentID,
-	  match,
-	   CONVERT(datetime,[GateDB_Cris].[dbo].[gate].[Date],103) as calendardate,
-	   mlObservation1
-  FROM [GateDB_Cris].[dbo].[gate_hunter_low_mood_306]
-left join
-[GateDB_Cris].[dbo].[gate]
- on [GateDB_Cris].[dbo].[gate_hunter_low_mood_306].CN_Doc_ID = [GateDB_Cris].[dbo].[gate].CN_Doc_ID
- )Table1 
- where calendardate between '01-MAR-2014' and '28-FEB-2015' and mlObservation1 = 'positive'
+			select distinct(r1)
+			from 
+								(
+								SELECT	[GateDB_Cris].dbo.gate_hunter_low_mood_suicide_306.BrcId		as r1, 
+										[GateDB_Cris].dbo.gate_hunter_low_mood_suicide_306.CN_Doc_ID	as documentID,
+										match,
+										CONVERT(datetime,[GateDB_Cris].[dbo].[gate].[Date],103)			as calendardate,
+										mlObservation1,
+										keyObservation1
+								FROM	[GateDB_Cris].dbo.gate_hunter_low_mood_suicide_306
+								left join
+										[GateDB_Cris].[dbo].[gate]
+								on		[GateDB_Cris].dbo.gate_hunter_low_mood_suicide_306.CN_Doc_ID = 
+										[GateDB_Cris].[dbo].[gate].CN_Doc_ID
+								)Table1 
+			 where	calendardate between '01-MAR-2014' and '28-FEB-2015' and 
+					mlObservation1 = 'positive' and
+					keyObservation1 is null
  )LowMoodPast
  on 
  Table1.a = LowMoodPast.r1
@@ -2802,8 +3242,9 @@ from
 															cn_doc_id as documentID, 
 															src_table,
 															src_col 
-															from [GateDB_Cris].[dbo].[gate_hunter_low_mood_306]
-															where mlObservation1 = 'positive'
+															from [GateDB_Cris].dbo.gate_hunter_low_mood_suicide_306
+															where	mlObservation1 = 'positive' and
+																	keyObservation1 is NULL
 															)Table1											
 									inner join
 											  [GateDB_Cris].[dbo].[gate] 
@@ -2842,8 +3283,9 @@ from
 															cn_doc_id as documentID, 
 															src_table,
 															src_col 
-															from [GateDB_Cris].[dbo].[gate_hunter_low_mood_306]
-															where mlObservation1 = 'positive'
+															from [GateDB_Cris].dbo.gate_hunter_low_mood_suicide_306
+															where	mlObservation1 = 'positive' and
+																	keyObservation1 is NULL
 															)Table1											
 									inner join
 											  [GateDB_Cris].[dbo].[gate] 
@@ -2915,7 +3357,7 @@ Table1.a = SpellTable.BrcId
 
 
 --joining number of spell data, for the patients who have a face to face contact between 1st mar 2015 and 31st 
--- dec 2015 to get hteir closest spell date to start of observation period. 
+-- aug 2015 to get their closest spell date to start of observation period. 
 
 left join
 
@@ -3050,6 +3492,7 @@ group by BrcId
  as NonComplianceIndicator
 
 on Table1.a = NonComplianceIndicator.noncompliancebrcid
+----------------------------------------------------------------------------
 
 -------------------------------------------------------------------------------------------------------
 -- Current Psychotherapy session, binary indicator of 
@@ -3543,11 +3986,13 @@ left join
 					from
 								(
 								select LSOA11 AS LSOA11_1, 
-									   [SQLCrisImport].[dbo].[address_ons_2010_imd].[Index of Multiple Deprivation Score] as imd_score,
+										CN_Doc_ID,
+									   [SQLCrisImport].[dbo].[address_ons_2015_imd].[Index of Multiple Deprivation (IMD) Score] as imd_score,
 									   RANK () OVER (PARTITION BY BRCID ORDER BY (ABS(DATEDIFF(DD,
 																							   '01-MAR-2015',Start_Date))) ASC, 
-																							   cn_doc_id ) as AddressClosesttoSnapshot
-								from [SQLCrisImport].[dbo].[address_ons_2010_imd]
+																							   cn_doc_id desc) as AddressClosesttoSnapshot
+								from [SQLCrisImport].[dbo].[address_ons_2015_imd]
+								
 								)TableAddress
 					where AddressClosesttoSnapshot = '1'
 		)TableAddressClosestToSnapshot
